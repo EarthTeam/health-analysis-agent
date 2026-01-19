@@ -120,6 +120,18 @@ export default function DashboardPage() {
                         </ul>
                     </div>
 
+                    {assessment.insight && (
+                        <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl flex gap-3 items-start">
+                            <Activity className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Physiological Insight</h4>
+                                <p className="text-sm text-foreground font-medium leading-relaxed italic">
+                                    &ldquo;{assessment.insight}&rdquo;
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="pt-4 border-t border-border">
                         <div className="flex gap-2 items-start">
                             <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Why?</span>
@@ -137,6 +149,28 @@ export default function DashboardPage() {
 
                 {/* Stats Column */}
                 <div className="space-y-6">
+                    {/* Fragility Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">System Fragility</h3>
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-3 w-3 rounded-full animate-pulse",
+                                assessment.fragility === "High" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
+                                    assessment.fragility === "Moderate" ? "bg-amber-500" : "bg-emerald-500"
+                            )}></div>
+                            <span className={cn(
+                                "text-2xl font-bold uppercase tracking-tight",
+                                assessment.fragility === "High" ? "text-red-500" :
+                                    assessment.fragility === "Moderate" ? "text-amber-500" : "text-emerald-500"
+                            )}>{assessment.fragility}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                            {assessment.fragility === "High" ? "System is sensitive. Prioritize protection over maintenance." :
+                                assessment.fragility === "Moderate" ? "Exercise caution. Modulate load to avoid a delayed dip." :
+                                    "Stable profile. Maintain rhythm to build durability."}
+                        </p>
+                    </div>
+
                     {/* Confidence Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confidence Score</h3>
@@ -147,7 +181,6 @@ export default function DashboardPage() {
                         <div className="w-full bg-secondary h-2 rounded-full mt-3 overflow-hidden">
                             <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${assessment.conf}%` }} />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">Higher = devices agree + stable vs baseline.</p>
                     </div>
 
                     {/* Outliers Card */}

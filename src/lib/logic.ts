@@ -358,7 +358,32 @@ export function computeDayAssessment(
         }
     }
 
-    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why, plan, cycleLabel };
+    // --- Physiological Insights (ADT/CFS Specific) ---
+    let insight = "";
+    const morphHigh = (entry.mReady != null && base.mReady?.mean != null && entry.mReady > base.mReady.mean);
+    const recLow = ((entry.ouraRec != null && base.ouraRec?.mean != null && entry.ouraRec < base.ouraRec.mean) ||
+        (entry.whoopRec != null && base.whoopRec?.mean != null && entry.whoopRec < base.whoopRec.mean));
+
+    if (morphHigh && recLow) {
+        insight = "Capacity vs. Consolidation Mismatch: Engine capacity is high (Morpheus), but battery recharge is lagging (Oura/Whoop). Stay conservative.";
+    } else if (morphHigh && !recLow && majority === "ok") {
+        insight = "Regulated Capacity: Metrics are aligned. Maintain rhythm to build durability.";
+    } else if (!morphHigh && recLow && majority === "stressed") {
+        insight = "Consolidation Crisis: System is prioritizing recovery. Focus on morning protection.";
+    }
+
+    // --- Fragility Assessment ---
+    let fragility: "Low" | "Moderate" | "High" = "Low";
+    const painSignal = (entry.joint != null && entry.joint >= t.jointWarn);
+    const extremeFatigue = (entry.fatigue != null && entry.fatigue >= 8);
+
+    if (conf < 50 || cycleLabel || (painSignal && extremeFatigue)) {
+        fragility = "High";
+    } else if (conf < 75 || painSignal || fatigueSignal === "stressed") {
+        fragility = "Moderate";
+    }
+
+    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why, plan, insight, fragility, cycleLabel };
 }
 
 export function voteLabelFromAssess(assess: DayAssessment): string {
@@ -391,6 +416,7 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
+    lines.push(`Fragility=${assess.fragility.toUpperCase()} Insight=${assess.insight || "None"}`);
     lines.push(`Recommendation=${assess.recText}`);
     lines.push("Plan:");
     assess.plan.forEach(p => lines.push(`- ${p}`));

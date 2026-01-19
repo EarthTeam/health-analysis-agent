@@ -44,6 +44,8 @@ export interface DayAssessment {
     recText: string;
     why: string[];
     plan: string[];
+    insight?: string;
+    fragility: "Low" | "Moderate" | "High";
     cycleLabel?: string;
 }
 
