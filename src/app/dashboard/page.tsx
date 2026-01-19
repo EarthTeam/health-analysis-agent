@@ -80,8 +80,16 @@ export default function DashboardPage() {
                 <div className="col-span-1 md:col-span-2 bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
                     <div className={cn("absolute top-0 left-0 w-1 h-full", ringBg)}></div>
                     <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Recommendation</h2>
+                        <div className="flex-1">
+                            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Strategy</h2>
+
+                            {/* Daily Mantra */}
+                            <div className="mt-3 mb-6">
+                                <p className="text-xl md:text-2xl font-bold text-foreground leading-tight tracking-tight">
+                                    {assessment.mantra}
+                                </p>
+                            </div>
+
                             <div className="flex items-center mt-2 flex-wrap gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className={cn("p-2 rounded-full bg-opacity-10", ringColor.replace("text-", "bg-"), ringColor)}>
@@ -93,7 +101,7 @@ export default function DashboardPage() {
                                 <div className="h-8 w-px bg-border hidden sm:block"></div>
 
                                 <div>
-                                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vote</h3>
+                                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</h3>
                                     <span className={cn(
                                         "text-xl font-bold uppercase tracking-tight",
                                         assessment.cycleLabel ? "text-amber-500" :
@@ -109,6 +117,19 @@ export default function DashboardPage() {
                         <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md">{latestDate}</span>
                     </div>
 
+                    {/* Morning Scout Check */}
+                    <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border flex gap-3 items-center">
+                        <div className="p-2 bg-background rounded-lg shadow-sm">
+                            <Activity className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Morning Scout Check</h4>
+                            <p className="text-sm font-semibold text-foreground">
+                                {assessment.scoutCheck}
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="space-y-4 mb-6">
                         <ul className="space-y-2">
                             {assessment.plan.map((p, i) => (
@@ -122,9 +143,11 @@ export default function DashboardPage() {
 
                     {assessment.insight && (
                         <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl flex gap-3 items-start">
-                            <Activity className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <div className="mt-1">
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                            </div>
                             <div>
-                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Physiological Insight</h4>
+                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Physiological Principle</h4>
                                 <p className="text-sm text-foreground font-medium leading-relaxed italic">
                                     &ldquo;{assessment.insight}&rdquo;
                                 </p>
@@ -151,23 +174,25 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     {/* Fragility Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">System Fragility</h3>
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Fragility Profile</h3>
                         <div className="flex items-center gap-3">
                             <div className={cn(
-                                "h-3 w-3 rounded-full animate-pulse",
-                                assessment.fragility === "High" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
-                                    assessment.fragility === "Moderate" ? "bg-amber-500" : "bg-emerald-500"
+                                "h-3 w-3 rounded-full",
+                                assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
+                                    assessment.fragilityType === "Consolidation" ? "bg-orange-500" : "bg-emerald-500"
                             )}></div>
                             <span className={cn(
                                 "text-2xl font-bold uppercase tracking-tight",
-                                assessment.fragility === "High" ? "text-red-500" :
-                                    assessment.fragility === "Moderate" ? "text-amber-500" : "text-emerald-500"
-                            )}>{assessment.fragility}</span>
+                                assessment.fragilityType === "Global" ? "text-red-500" :
+                                    assessment.fragilityType === "Consolidation" ? "text-orange-500" : "text-emerald-500"
+                            )}>
+                                {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
+                            </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                            {assessment.fragility === "High" ? "System is sensitive. Prioritize protection over maintenance." :
-                                assessment.fragility === "Moderate" ? "Exercise caution. Modulate load to avoid a delayed dip." :
-                                    "Stable profile. Maintain rhythm to build durability."}
+                            {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
+                                assessment.fragilityType === "Consolidation" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
+                                    "System is harmonized. Safe to build durability."}
                         </p>
                     </div>
 

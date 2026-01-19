@@ -374,18 +374,41 @@ export function computeDayAssessment(
         insight = "Consolidation Crisis: System is prioritizing recovery. Focus on morning protection.";
     }
 
-    // --- Fragility Assessment ---
-    let fragility: "Low" | "Moderate" | "High" = "Low";
-    const painSignal = (entry.joint != null && entry.joint >= t.jointWarn);
-    const extremeFatigue = (entry.fatigue != null && entry.fatigue >= 8);
+    // --- Nuanced Fragility & Mantra Logic (v2.3) ---
+    let fragilityType: "Consolidation" | "Global" | "None" = "None";
+    let mantra = "";
+    let scoutCheck = "";
 
-    if (conf < 50 || cycleLabel || (painSignal && extremeFatigue)) {
-        fragility = "High";
-    } else if (conf < 75 || painSignal || fatigueSignal === "stressed") {
-        fragility = "Moderate";
+    const hrvLow = (entry.mHrv != null && base.mHrv?.mean != null && (base.mHrv.mean - entry.mHrv) / base.mHrv.mean >= t.hrvDropPct);
+    const rhrHigh = (entry.ouraRhr != null && base.ouraRhr?.mean != null && (entry.ouraRhr - base.ouraRhr.mean) >= t.rhrAbs) ||
+        (entry.whoopRhr != null && base.whoopRhr?.mean != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs);
+    const majorityStressed = majority === "stressed";
+
+    // Global Fragility: Autonomic Collapse Signature
+    if (majorityStressed && (hrvLow || rhrHigh || (entry.fatigue != null && entry.fatigue >= 8))) {
+        fragilityType = "Global";
+        mantra = "Autonomic Reset: Systemic crash signature detected. Protection is mandatory today to prevent a deeper spiral.";
+        scoutCheck = "Notice any dizziness or heart racing: stay strictly within the lowest effort zones.";
+    }
+    // Consolidation Fragility: Engine OK, Chassis Tender
+    else if (signalTension || (morphHigh && (recLow || (entry.joint != null && entry.joint >= t.jointWarn)))) {
+        fragilityType = "Consolidation";
+        mantra = "Scout Then Roam: Consolidation fragility present, not system fragility. Capacity is present, but protection is needed until recovery catches up.";
+        scoutCheck = "Ask after 10 min: 'Is my system loosening or tightening?' Loosening = Grow; Tightening = Protect.";
+    }
+    else if (majority === "ok" && conf >= 80) {
+        mantra = "Build Durability: System is harmonized and stable. Maintain rhythm to build your cumulative ceiling.";
+        scoutCheck = "Confirm fluidity through the hips and joints. Keep the 'Wolf' mindset.";
+    } else {
+        mantra = "Modulate & Observe: Transition day. Use movement to refine the picture.";
+        scoutCheck = "Check for energy shifts post-exercise. Do you feel more or less regulated?";
     }
 
-    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why, plan, insight, fragility, signalTension, cycleLabel };
+    return {
+        flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
+        conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
+        insight, fragilityType, signalTension, mantra, scoutCheck, cycleLabel
+    };
 }
 
 export function voteLabelFromAssess(assess: DayAssessment): string {
@@ -418,7 +441,8 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
-    lines.push(`Fragility=${assess.fragility.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} Insight=${assess.insight || "None"}`);
+    lines.push(`Fragility=${assess.fragilityType.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} Insight=${assess.insight || "None"}`);
+    lines.push(`Mantra="${assess.mantra}"`);
     lines.push(`Recommendation=${assess.recText}`);
     lines.push("Plan:");
     assess.plan.forEach(p => lines.push(`- ${p}`));
