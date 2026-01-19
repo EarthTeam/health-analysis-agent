@@ -181,7 +181,15 @@ export default function DashboardPage() {
 
                 <div className="h-[280px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                        <LineChart data={chartData} margin={{ top: 20, right: 5, left: -20, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="regulationGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#10b981" />       {/* Green - Regulated (100) */}
+                                    <stop offset="50%" stopColor="#f59e0b" />      {/* Yellow - Transitional (50) */}
+                                    <stop offset="75%" stopColor="#f97316" />      {/* Orange - Dip (25) */}
+                                    <stop offset="100%" stopColor="#ef4444" />     {/* Red - Dysregulated (0) */}
+                                </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                             <XAxis
                                 dataKey="date"
@@ -199,6 +207,16 @@ export default function DashboardPage() {
                             <Tooltip
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                 labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                                formatter={(value: any, name: any) => {
+                                    if (name === "Regulation Status") {
+                                        const val = Number(value);
+                                        if (val >= 90) return ["REGULATED", name];
+                                        if (val >= 40) return ["TRANSITIONAL", name];
+                                        if (val >= 15) return ["POST-REG DIP", name];
+                                        return ["DYSREGULATED", name];
+                                    }
+                                    return [value, name];
+                                }}
                             />
                             <Line
                                 type="monotone"
@@ -208,23 +226,24 @@ export default function DashboardPage() {
                                 dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
                                 activeDot={{ r: 6 }}
                                 name="Confidence"
+                                zIndex={10}
                             />
                             <Line
-                                type="stepAfter"
+                                type="monotone"
                                 dataKey="regulation"
-                                stroke="#10b981"
-                                strokeWidth={2}
-                                strokeDasharray="5 5"
-                                dot={false}
+                                stroke="url(#regulationGradient)"
+                                strokeWidth={4}
+                                dot={{ r: 3, strokeWidth: 1, fill: '#fff' }}
                                 name="Regulation Status"
                             />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
-                <div className="mt-4 flex justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                    <span>Stressed (0)</span>
-                    <span>Neutral (50)</span>
-                    <span>Regulated (100)</span>
+                <div className="mt-4 flex justify-between text-[10px] uppercase tracking-widest font-bold">
+                    <span className="text-red-500">Dysregulated (0)</span>
+                    <span className="text-orange-500">Dip (25)</span>
+                    <span className="text-amber-500">Transitional (50)</span>
+                    <span className="text-emerald-500">Regulated (100)</span>
                 </div>
             </div>
 
