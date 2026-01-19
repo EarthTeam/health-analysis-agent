@@ -241,7 +241,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-4 flex justify-between text-[10px] uppercase tracking-widest font-bold">
                     <span className="text-red-500">Dysregulated (0)</span>
-                    <span className="text-orange-500">Dip (25)</span>
+                    <span className="text-orange-500">Post Reg Dip (25)</span>
                     <span className="text-amber-500">Transitional (50)</span>
                     <span className="text-emerald-500">Regulated (100)</span>
                 </div>
