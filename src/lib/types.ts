@@ -49,6 +49,8 @@ export interface DayAssessment {
     signalTension: boolean;
     mantra: string;
     scoutCheck: string;
+    crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
+    loadMemory: number;
     cycleLabel?: string;
 }
 

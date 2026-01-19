@@ -404,10 +404,97 @@ export function computeDayAssessment(
         scoutCheck = "Check for energy shifts post-exercise. Do you feel more or less regulated?";
     }
 
+    // --- Load Memory (48h Decay) ---
+    const calculateLoadMemory = (targetDate: string, allEntries: DailyEntry[]) => {
+        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = sorted.findIndex(e => e.date === targetDate);
+        if (idx === -1) return 0;
+
+        let memory = 0;
+        const stepThreshold = 9000;
+
+        // Today
+        if ((sorted[idx].steps || 0) >= stepThreshold) memory += 1.0;
+        // Yesterday (50% decay)
+        if (idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold) memory += 0.5;
+        // 2 days ago (25% decay)
+        if (idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold) memory += 0.25;
+
+        return Math.min(memory, 1.5); // Cap the heat
+    };
+
+    const loadMemory = calculateLoadMemory(entry.date, entries);
+
+    // --- Crash Signature Logic (v1) ---
+    const getCrashScore = (targetDate: string, allEntries: DailyEntry[]) => {
+        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = sorted.findIndex(e => e.date === targetDate);
+        if (idx === -1) return 0;
+
+        const window = sorted.slice(Math.max(0, idx - 2), idx + 1); // Last 3 days
+        if (window.length < 2) return 0;
+
+        let score = 0;
+
+        // 1. HRV Trend (Morpheus)
+        const avgHrv = window.reduce((acc, e) => acc + (e.mHrv || 0), 0) / window.length;
+        if (base.mHrv?.mean && avgHrv < base.mHrv.mean * 0.9) score += 1;
+
+        // 2. RHR Trend (Oura/Whoop)
+        const avgRhr = window.reduce((acc, e) => {
+            const r = e.ouraRhr || e.whoopRhr || 0;
+            return acc + r;
+        }, 0) / window.length;
+        if ((base.ouraRhr?.mean && avgRhr > base.ouraRhr.mean + 3) ||
+            (base.whoopRhr?.mean && avgRhr > base.whoopRhr.mean + 3)) score += 1;
+
+        // 3. Fatigue Trend
+        const avgFatigue = window.reduce((acc, e) => acc + (e.fatigue || 0), 0) / window.length;
+        if (avgFatigue >= 6.5) score += 1;
+
+        // 4. Load Memory Factor
+        if (loadMemory >= 0.75) score += 1;
+
+        // 5. Convergence check
+        const recoveryLow = window.filter(e => (e.ouraRec || 0) < 50 || (e.whoopRec || 0) < 50).length >= 2;
+        if (recoveryLow) score += 1;
+
+        // 6. Joint/Pain Sensitivity
+        const painActive = window.filter(e => (e.joint || 0) >= t.jointWarn).length >= 2;
+        if (painActive) score += 1;
+
+        return score;
+    };
+
+    const currentScore = getCrashScore(entry.date, entries);
+
+    // Persistence Rule: De-escalation requires 2 days of stability
+    // We'll look at yesterday's score to dampen the drop
+    let finalScore = currentScore;
+    const sortedEntries = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+    const entryIdx = sortedEntries.findIndex(e => e.date === entry.date);
+
+    if (entryIdx > 0) {
+        const prevEntry = sortedEntries[entryIdx - 1];
+        const prevScore = getCrashScore(prevEntry.date, entries);
+        // If current is much lower than yesterday, only allow a partial drop
+        if (currentScore < prevScore) {
+            // "Cannot de-escalate based on one day of data"
+            finalScore = Math.max(currentScore, prevScore - 0.5);
+        }
+    }
+
+    let crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State" = "Stable";
+    if (finalScore >= 5 || (majority === "stressed" && fatigueSignal === "stressed")) crashStatus = "Crash-State";
+    else if (finalScore >= 4) crashStatus = "Crash-Onset";
+    else if (finalScore >= 2.5) crashStatus = "Pre-Crash";
+    else if (finalScore >= 1) crashStatus = "Vulnerable";
+
     return {
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
-        insight, fragilityType, signalTension, mantra, scoutCheck, cycleLabel
+        insight, fragilityType, signalTension, mantra, scoutCheck,
+        crashStatus, loadMemory, cycleLabel
     };
 }
 
@@ -441,7 +528,7 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
-    lines.push(`Fragility=${assess.fragilityType.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} Insight=${assess.insight || "None"}`);
+    lines.push(`Fragility=${assess.fragilityType.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} CrashStatus=${assess.crashStatus.toUpperCase()} LoadMem=${assess.loadMemory.toFixed(2)}`);
     lines.push(`Mantra="${assess.mantra}"`);
     lines.push(`Recommendation=${assess.recText}`);
     lines.push("Plan:");

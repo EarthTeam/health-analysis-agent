@@ -172,6 +172,64 @@ export default function DashboardPage() {
 
                 {/* Stats Column */}
                 <div className="space-y-6">
+                    {/* Crash Signature Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Crash Signature</h3>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className={cn(
+                                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
+                                    assessment.crashStatus === "Crash-State" ? "bg-red-500 text-white border-red-600" :
+                                        assessment.crashStatus === "Crash-Onset" ? "bg-red-100 text-red-700 border-red-200" :
+                                            assessment.crashStatus === "Pre-Crash" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                                                assessment.crashStatus === "Vulnerable" ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                    "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                )}>
+                                    {assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " ")}
+                                </div>
+                            </div>
+
+                            <p className="text-sm font-medium text-foreground leading-snug">
+                                {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
+                                {assessment.crashStatus === "Vulnerable" && "Reduced margin. System absorbing load more slowly."}
+                                {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
+                                {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
+                                {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
+                            </p>
+
+                            <div className="flex gap-1 h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
+                                <div className={cn("h-full flex-1 transition-all", assessment.crashStatus !== "Stable" ? "bg-emerald-500" : "bg-emerald-200 opacity-20")} />
+                                <div className={cn("h-full flex-1 transition-all", ["Vulnerable", "Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-amber-500" : "bg-secondary")} />
+                                <div className={cn("h-full flex-1 transition-all", ["Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-orange-500" : "bg-secondary")} />
+                                <div className={cn("h-full flex-1 transition-all", ["Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-red-500" : "bg-secondary")} />
+                                <div className={cn("h-full flex-1 transition-all", assessment.crashStatus === "Crash-State" ? "bg-red-700" : "bg-secondary")} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Load Memory Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Load Memory (48h)</h3>
+                            <span className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                assessment.loadMemory > 1.0 ? "bg-red-100 text-red-700" :
+                                    assessment.loadMemory > 0.5 ? "bg-amber-100 text-amber-700" :
+                                        "bg-emerald-100 text-emerald-700"
+                            )}>
+                                {assessment.loadMemory > 0 ? "STILL HOT" : "COOL"}
+                            </span>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
+                            <span className="text-xs text-muted-foreground mb-1">heat index</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed italic">
+                            How much recent load is the system still processing?
+                        </p>
+                    </div>
+
                     {/* Fragility Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Fragility Profile</h3>
