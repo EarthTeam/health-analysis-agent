@@ -1,0 +1,394 @@
+import { DailyEntry, DayAssessment, OutlierFlag, RecoveryState, RecColor, AppSettings, BaselineStats } from "./types";
+
+// --- Math Helpers ---
+export function mean(xs: (number | null)[]): number | null {
+    const a = xs.filter((x): x is number => x != null && Number.isFinite(x));
+    if (!a.length) return null;
+    return a.reduce((p, c) => p + c, 0) / a.length;
+}
+
+export function sd(xs: (number | null)[]): number | null {
+    const a = xs.filter((x): x is number => x != null && Number.isFinite(x));
+    if (a.length < 2) return null;
+    const m = mean(a)!;
+    const v = a.reduce((p, c) => p + (c - m) * (c - m), 0) / (a.length - 1);
+    return Math.sqrt(v);
+}
+
+export function clamp(x: number, lo: number, hi: number): number {
+    return Math.max(lo, Math.min(hi, x));
+}
+
+// --- Thresholds ---
+function getThresholds(mode: "standard" | "adt") {
+    if (mode === "adt") {
+        return {
+            zOutlier: 1.6,
+            rhrAbs: 6,
+            hrvDropPct: 0.18,
+            recDropAbs: 10,
+            fatigueHigh: 6,
+            fatigueLow: 4,
+            jointWarn: 4,
+            disagreementPenalty: 25,
+            outlierPenalty: 25,
+            fatigueMismatchPenalty: 25,
+            trainingPenalty: 10,
+            stepsSwingPenalty: 10,
+        };
+    }
+    return {
+        zOutlier: 2.0,
+        rhrAbs: 8,
+        hrvDropPct: 0.22,
+        recDropAbs: 12,
+        fatigueHigh: 7,
+        fatigueLow: 4,
+        jointWarn: 5,
+        disagreementPenalty: 20,
+        outlierPenalty: 20,
+        fatigueMismatchPenalty: 20,
+        trainingPenalty: 8,
+        stepsSwingPenalty: 8,
+    };
+}
+
+// --- Assessment Logic ---
+
+export function computeBaselines(
+    entries: DailyEntry[],
+    baselineDays: number,
+    todayDate: string
+): Record<keyof DailyEntry, BaselineStats> {
+    const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const idx = sorted.findIndex((e) => e.date === todayDate);
+    // If today is not found, use all entries (assuming today is new). 
+    // But legacy logic says: (idx===-1?sorted:sorted.slice(0,idx)) which implies looking at PRIOR days.
+    // If today is in the list, we look at days BEFORE today.
+    const prior = idx === -1 ? sorted : sorted.slice(0, idx);
+
+    const window = prior.slice(Math.max(0, prior.length - baselineDays));
+
+    const fields: (keyof DailyEntry)[] = [
+        "mReady", "mHrv", "ouraRec", "whoopRec", "whoopRhr", "ouraRhr", "steps", "fatigue", "joint"
+    ];
+
+    const base: any = {};
+    for (const f of fields) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const xs = window.map((e) => (e as any)[f] as number | null);
+        base[f] = { mean: mean(xs), sd: sd(xs), n: xs.filter((x) => x != null).length };
+    }
+    return base;
+}
+
+function classifyRecovery(entry: DailyEntry): { device: string; signal: string; score: number }[] {
+    const votes: { device: string; signal: string; score: number }[] = [];
+    if (entry.mReady != null) votes.push({ device: "Morpheus", signal: "mReady", score: entry.mReady });
+    if (entry.ouraRec != null) votes.push({ device: "Oura", signal: "ouraRec", score: entry.ouraRec });
+    if (entry.whoopRec != null) votes.push({ device: "Whoop", signal: "whoopRec", score: entry.whoopRec });
+    else if (entry.whoopRhr != null) votes.push({ device: "Whoop", signal: "whoopRhrProxy", score: 120 - entry.whoopRhr });
+    return votes;
+}
+
+function outlierFlags(
+    entry: DailyEntry,
+    base: Record<keyof DailyEntry, BaselineStats>,
+    t: ReturnType<typeof getThresholds>
+): OutlierFlag[] {
+    const flags: OutlierFlag[] = [];
+
+    const zflag = (field: keyof DailyEntry, hintLabel: string) => {
+        const b = base[field];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const val = (entry as any)[field] as number | null;
+        if (!b || b.mean == null || val == null) return;
+        if (!b.sd || b.sd === 0) return;
+        const z = (val - b.mean) / b.sd;
+        if (Math.abs(z) >= t.zOutlier) flags.push({ field, kind: "z", z, hint: hintLabel });
+    };
+
+    zflag("mReady", "Readiness");
+    zflag("mHrv", "HRV");
+    zflag("ouraRec", "Recovery");
+    zflag("whoopRec", "Recovery");
+    zflag("whoopRhr", "RHR");
+    zflag("ouraRhr", "RHR");
+
+    // Steps are optional; do not treat missing/0-today as a physiological outlier
+    const isToday = entry.date === new Date().toISOString().slice(0, 10);
+    if (!(isToday && entry.steps === 0)) {
+        zflag("steps", "Steps");
+    }
+
+    zflag("fatigue", "Fatigue");
+
+    if (base.whoopRhr?.mean != null && entry.whoopRhr != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs)
+        flags.push({ field: "whoopRhr", kind: "abs", hint: `Whoop RHR +${t.rhrAbs} bpm vs baseline` });
+
+    if (base.ouraRhr?.mean != null && entry.ouraRhr != null && (entry.ouraRhr - base.ouraRhr.mean) >= t.rhrAbs)
+        flags.push({ field: "ouraRhr", kind: "abs", hint: `Oura RHR +${t.rhrAbs} bpm vs baseline` });
+
+    if (base.mHrv?.mean != null && entry.mHrv != null) {
+        const drop = (base.mHrv.mean - entry.mHrv) / base.mHrv.mean;
+        if (drop >= t.hrvDropPct) flags.push({ field: "mHrv", kind: "pct", hint: `HRV drop ≥${Math.round(t.hrvDropPct * 100)}% vs baseline` });
+    }
+
+    if (base.mReady?.mean != null && entry.mReady != null && (base.mReady.mean - entry.mReady) >= t.recDropAbs)
+        flags.push({ field: "mReady", kind: "abs", hint: `Readiness drop ≥${t.recDropAbs}` });
+
+    if (base.ouraRec?.mean != null && entry.ouraRec != null && (base.ouraRec.mean - entry.ouraRec) >= t.recDropAbs)
+        flags.push({ field: "ouraRec", kind: "abs", hint: `Recovery drop ≥${t.recDropAbs}` });
+
+    if (base.whoopRec?.mean != null && entry.whoopRec != null && (base.whoopRec.mean - entry.whoopRec) >= t.recDropAbs)
+        flags.push({ field: "whoopRec", kind: "abs", hint: `Recovery drop ≥${t.recDropAbs}` });
+
+    return flags;
+}
+
+export function computeDayAssessment(
+    entry: DailyEntry,
+    entries: DailyEntry[],
+    baselineDays: number,
+    mode: "standard" | "adt",
+    _depth = 0
+): DayAssessment {
+    const t = getThresholds(mode);
+    const base = computeBaselines(entries, baselineDays, entry.date);
+    const flags = outlierFlags(entry, base, t);
+
+    const isToday = entry.date === new Date().toISOString().slice(0, 10);
+    const stepsMissing = !!entry.morningEntry || (entry.steps == null);
+
+    const votes = classifyRecovery(entry);
+    const voteResults: { device: string; state: RecoveryState }[] = [];
+
+    for (const v of votes) {
+        let bmean: number | null = null;
+        if (v.signal === "mReady") bmean = base.mReady?.mean ?? null;
+        if (v.signal === "ouraRec") bmean = base.ouraRec?.mean ?? null;
+        if (v.signal === "whoopRec") bmean = base.whoopRec?.mean ?? null;
+        if (v.signal === "whoopRhrProxy") bmean = (base.whoopRhr?.mean != null ? 120 - base.whoopRhr.mean : null);
+
+        let state: RecoveryState = "neutral";
+        if (bmean != null && v.score != null) {
+            const delta = v.score - bmean;
+            if (delta >= 2) state = "ok";
+            else if (delta <= -2) state = "stressed";
+        } else if (v.score != null) {
+            if (v.score >= 70) state = "ok";
+            else if (v.score <= 45) state = "stressed";
+        }
+        voteResults.push({ device: v.device, state });
+    }
+
+    const okCount = voteResults.filter((x) => x.state === "ok").length;
+    const stCount = voteResults.filter((x) => x.state === "stressed").length;
+    let majority: RecoveryState | "mixed" = "mixed";
+    if (okCount >= 2) majority = "ok";
+    if (stCount >= 2) majority = "stressed";
+
+    let fatigueSignal: RecoveryState | "unknown" = "unknown";
+    if (entry.fatigue != null) {
+        if (entry.fatigue >= t.fatigueHigh) fatigueSignal = "stressed";
+        else if (entry.fatigue <= t.fatigueLow) fatigueSignal = "ok";
+        else fatigueSignal = "neutral";
+    }
+
+    const disagreement = (majority === "mixed") ? true : (voteResults.some((v) => v.state !== "neutral" && v.state !== majority));
+    const fatigueMismatch = (fatigueSignal !== "unknown" && fatigueSignal !== "neutral" && majority !== "mixed" && fatigueSignal !== majority);
+
+    let conf = 100;
+    const outlierCount = (new Set(flags.map((f) => f.field))).size;
+    conf -= outlierCount * t.outlierPenalty;
+    if (disagreement) conf -= t.disagreementPenalty;
+    if (fatigueMismatch) conf -= t.fatigueMismatchPenalty;
+    if (entry.resistance === "Y") conf -= t.trainingPenalty;
+
+    if (!stepsMissing && base.steps?.mean != null && entry.steps != null && base.steps.mean > 0) {
+        const swing = Math.abs(entry.steps - base.steps.mean) / base.steps.mean;
+        if (swing > 0.30) conf -= t.stepsSwingPenalty;
+    }
+    conf = clamp(conf, 0, 100);
+
+    const outlierFields = new Set<string>(flags.map((f) => f.field));
+    const deviceFields: Record<string, string[]> = { Morpheus: ["mReady", "mHrv"], Oura: ["ouraRec", "ouraRhr"], Whoop: ["whoopRec", "whoopRhr"] };
+    let odd: string | null = null;
+    let oddWhy = "";
+
+    if (majority !== "mixed" && voteResults.length >= 2) {
+        const candidates = voteResults.filter((v) => v.state !== "neutral" && v.state !== majority);
+        if (candidates.length === 1) {
+            const c = candidates[0];
+            const fields = deviceFields[c.device] || [];
+            const hasOutlier = fields.some((f) => outlierFields.has(f));
+            const disagreesWithFatigue = (fatigueSignal !== "unknown" && fatigueSignal !== "neutral" && c.state !== fatigueSignal);
+            if (hasOutlier && (fatigueSignal === "unknown" || disagreesWithFatigue)) {
+                odd = c.device;
+                oddWhy = `Conflicts with majority (${majority}) and shows outlier behavior in ${fields.filter((f) => outlierFields.has(f)).join(", ") || "device metrics"}.`;
+            }
+        }
+    }
+
+    let rec: RecColor = "Green";
+    const why: string[] = [];
+    if (conf < 55) rec = "Red";
+    else if (conf < 80) rec = "Yellow";
+
+    if (entry.joint != null && entry.joint >= t.jointWarn) {
+        if (rec === "Green") rec = "Yellow";
+        why.push(`Joint warning ${entry.joint}/10 → joint-protective bias.`);
+    }
+    if (fatigueSignal === "stressed") {
+        if (rec === "Green") rec = "Yellow";
+        if (conf < 55) rec = "Red";
+        why.push(`Fatigue ${entry.fatigue}/10 indicates strain.`);
+    }
+    if (outlierCount) why.push(`${outlierCount} outlier signal(s) vs baseline.`);
+    if (disagreement) why.push(`Devices disagree → uncertainty day.`);
+    if (!why.length) why.push("Stable vs baseline; devices mostly consistent.");
+
+    // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
+    let cycleLabel = "";
+    if (_depth === 0) {
+        try {
+            const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+            const idx = sorted.findIndex(e => e.date === entry.date);
+            const prev1 = idx > 0 ? sorted[idx - 1] : null;
+            const prev2 = idx > 1 ? sorted[idx - 2] : null;
+            const prevAssess1 = prev1 ? computeDayAssessment(prev1, sorted, baselineDays, mode, _depth + 1) : null;
+            const prevAssess2 = prev2 ? computeDayAssessment(prev2, sorted, baselineDays, mode, _depth + 1) : null;
+
+            const stressedNow = (majority === "stressed" || fatigueSignal === "stressed");
+            const wasOkRecently = (
+                (prevAssess1 && (prevAssess1.majority === "ok" || prevAssess1.rec === "Yellow")) ||
+                (prevAssess2 && (prevAssess2.majority === "ok" || prevAssess2.rec === "Yellow"))
+            );
+            const noTraining = entry.resistance !== "Y";
+            const morningPattern = (entry.fatigue != null && entry.fatigue >= t.fatigueHigh);
+            if (mode === "adt" && stressedNow && wasOkRecently && noTraining && morningPattern && !disagreement) {
+                cycleLabel = "Post-regulation dip";
+            }
+        } catch (e) { }
+    }
+
+    // --- Load sequencing (anti-stacking) ---
+    const HIGH_STEPS = 9500;
+    let loadStackFlag = false;
+
+    if (_depth === 0 && mode === "adt") {
+        try {
+            const sortedSeq = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+            const i = sortedSeq.findIndex(e => e.date === entry.date);
+
+            if (i >= 2) {
+                const d1 = sortedSeq[i - 1];
+                const d2 = sortedSeq[i - 2];
+
+                const daysDiff = (aISO: string, bISO: string) => {
+                    const a = new Date(aISO + "T00:00:00");
+                    const b = new Date(bISO + "T00:00:00");
+                    return Math.round((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000));
+                };
+
+                const consecutive = (daysDiff(d2.date, d1.date) === 1) && (daysDiff(d1.date, entry.date) === 1);
+                const s1 = d1.steps;
+                const s2 = d2.steps;
+
+                if (consecutive && s1 != null && s2 != null && s1 >= HIGH_STEPS && s2 >= HIGH_STEPS) {
+                    loadStackFlag = true;
+                }
+            }
+        } catch (e) { }
+    }
+
+    if (cycleLabel) {
+        why.push("Pattern suggests a post‑regulation dip (common in ADT/CFS physiology): protect the morning and reassess later in the day.");
+    }
+    if (stepsMissing) {
+        why.push("Steps not yet entered (morning entry) → steps excluded from outliers/confidence.");
+    }
+
+    // Movement guidance phrases
+    const moveGoWolf = "Go Wolf";
+    const moveEasy = "Go Easy, Check Later";
+    const moveScout = "Go Slow, Scout";
+    const moveRest = "Rest, Then Resume";
+
+    let recText = "";
+    let plan = "";
+
+    if (rec === "Green") {
+        recText = `Maintain Rhythm — Go Wolf (${moveGoWolf})`;
+        plan = "Maintain rhythm: walk naturally; hills allowed if they feel good; no need to police zones. Strength work only if it improves symptoms; stop for joint pain.";
+    } else if (rec === "Yellow") {
+        recText = `Modulate & Observe — Stay in Motion (${moveEasy})`;
+        plan = "Modulate: keep the walk easy/conversational; prefer flatter routes; avoid 'testing' the system. Reassess after ~3–5 pm before adding intensity.";
+    } else { // Red
+        if (cycleLabel) {
+            recText = `Morning Protection — Prime, Don’t Train (${moveScout})`;
+            plan = "Morning protection: keep the morning gentle. Short, easy walk only if it lightens heaviness; stop early; avoid experiments; reassess after ~3–5 pm; prioritize sleep/hydration.";
+        } else {
+            recText = `Morning Protection — Prime, Don’t Train (${moveRest})`;
+            plan = "Protect the system: rest first. Very easy movement only if clearly regulating (minutes, not miles). Resume normal walking once symptoms settle; prioritize sleep/hydration.";
+        }
+    }
+
+    // Load sequencing override
+    if (mode === "adt" && loadStackFlag && rec !== "Red") {
+        why.push(`Load sequencing: two consecutive high-step days (≥${HIGH_STEPS.toLocaleString()} steps) detected → Scout day to prevent delayed dysregulation.`);
+        if (rec === "Green") {
+            recText = `REGULATED — Scout Day (${moveScout})`;
+            plan = "Scout day: move to maintain trust, but de-stack load. Shorter or flatter walk; conversational pace; hills allowed but not chased. End feeling you could do more. Skip strength unless it clearly improves symptoms and joints feel safe.";
+        } else {
+            recText = `Modulate & Observe — Scout Day (${moveScout})`;
+            plan = "Scout day: keep movement, reduce demand. Prefer flatter route and easy pace; avoid testing the system. Reassess after ~3–5 pm before adding any intensity.";
+        }
+    }
+
+    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why: why.join(" "), plan, cycleLabel };
+}
+
+export function voteLabelFromAssess(assess: DayAssessment): string {
+    if (assess.cycleLabel) return "POST-REGULATION DIP";
+    if (assess.majority === "ok") return "REGULATED";
+    if (assess.majority === "mixed") return "TRANSITIONAL";
+    if (assess.majority === "stressed") return "DYSREGULATED";
+    return String(assess.majority || "").toUpperCase();
+}
+
+// --- Bundle Generation ---
+
+function fmt(n: number | null | undefined, d = 0): string {
+    if (n == null || Number.isNaN(n)) return "";
+    const x = Number(n);
+    return Number.isFinite(x) ? x.toFixed(d) : "";
+}
+
+export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings): string {
+    if (!entries.length) return "No entries yet.";
+    const { baselineDays, mode } = settings;
+    const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const latest = sorted[sorted.length - 1];
+    const assess = computeDayAssessment(latest, sorted, baselineDays, mode);
+
+    const lines: string[] = [];
+    lines.push("ANALYSIS BUNDLE — 3-Device Cross-Check");
+    lines.push(`Mode=${mode.toUpperCase()} Baseline=${baselineDays}d Entries=${entries.length}`);
+    lines.push(`Latest=${latest.date}`);
+    lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
+    lines.push("");
+    lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
+    lines.push(`Recommendation=${assess.recText} Plan=${assess.plan}`);
+    lines.push(`OddOneOut=${assess.oddOneOut || "None"} ${assess.oddOneOut ? ("— " + assess.oddWhy) : ""}`);
+    lines.push("");
+    lines.push("Outliers:");
+    if (!assess.flags.length) lines.push("- none");
+    else assess.flags.forEach((f) => lines.push(`- ${f.field}: ${f.kind === "z" ? ("z=" + fmt(f.z, 2)) : f.kind} (${f.hint || ""})`));
+    lines.push("");
+    lines.push("Recent (14):");
+    sorted.slice(-14).reverse().forEach((e) => {
+        lines.push(`- ${e.date}: mReady=${fmt(e.mReady)} mHRV=${fmt(e.mHrv)} ouraRec=${fmt(e.ouraRec)} whoopRec=${fmt(e.whoopRec)} whoopRHR=${fmt(e.whoopRhr)} ouraRHR=${fmt(e.ouraRhr)} steps=${fmt(e.steps)} fatigue=${fmt(e.fatigue)} res=${e.resistance} joint=${fmt(e.joint)} notes="${e.notes || ""}"`);
+    });
+    return lines.join("\n");
+}

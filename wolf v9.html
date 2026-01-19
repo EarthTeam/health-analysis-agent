@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>3-Device Recovery Cross-Check</title>
+  <style>
+    :root{
+      --headerH: 0px;
+     --pad: 12px; --radius: 14px; }
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#f6f7f9; color:#111; }
+    header { padding: 18px 16px; background:#fff; border-bottom:1px solid #e6e8ee; position: sticky; top:0; z-index:10; }
+    header h1 { margin:0; font-size: 18px; }
+    header .sub { margin-top:6px; color:#555; font-size: 13px; line-height:1.3; }
+    main { padding: 16px; max-width: 1160px; margin: 0 auto; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 980px){ .grid { grid-template-columns: 430px 1fr; align-items:start; } }
+    .card { background:#fff; border:1px solid #e6e8ee; border-radius: var(--radius); padding: 14px; }
+    .card h2 { margin: 0 0 10px; font-size: 15px; }
+    label { display:block; font-size: 12px; color:#333; margin: 10px 0 6px; }
+    input, select, textarea { width:100%; padding: 10px; border-radius: 10px; border:1px solid #d7dbe6; background:#fff; font-size: 14px; box-sizing:border-box; }
+    textarea { min-height: 64px; resize: vertical; }
+    .row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btnrow { display:flex; flex-wrap:wrap; gap: 8px; margin-top: 12px; }
+    button { border:1px solid #d7dbe6; background:#111; color:#fff; padding:10px 12px; border-radius: 10px; font-weight: 650; cursor:pointer; }
+    button.secondary { background:#fff; color:#111; }
+    button.danger { background:#b00020; border-color:#b00020; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .pill { display:inline-flex; align-items:center; gap:6px; border:1px solid #d7dbe6; padding: 6px 10px; border-radius: 999px; font-size: 12px; color:#222; background:#fff; }
+    .kpi { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 10px; }
+    .kpi .box { border:1px solid #e6e8ee; border-radius: 12px; padding: 10px; background:#fcfcfd; }
+    .kpi .box .lbl { font-size: 11px; color:#555; }
+    .kpi .box .val { font-size: 18px; font-weight: 760; margin-top: 4px; }
+    .kpi .box .hint { font-size: 11px; color:#666; margin-top: 4px; line-height:1.2; }
+    table { width:100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+    th, td { padding: 8px 8px; border-bottom:1px solid #eef0f6; vertical-align: top; }
+    th { text-align:left; color:#444; font-weight: 700; position: sticky; top: calc(var(--headerH) + env(safe-area-inset-top)); background:#fff; z-index: 5; }
+    tr:hover td { background:#fbfbff; }
+    .tag { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; border:1px solid #d7dbe6; background:#fff; }
+    .green { border-color:#1b7f3b; color:#1b7f3b; }
+    .yellow { border-color:#b07a00; color:#b07a00; }
+    .red { border-color:#b00020; color:#b00020; }
+    .muted { color:#666; }
+    .small { font-size: 11px; color:#666; line-height:1.2; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .hr { height:1px; background:#eef0f6; margin: 12px 0; }
+    .flex { display:flex; gap: 10px; flex-wrap:wrap; align-items:center; }
+    .right { margin-left:auto; }
+    .note { background:#f0f4ff; border:1px solid #d8e2ff; padding: 10px; border-radius: 12px; font-size: 12px; color:#203a86; line-height:1.35; }
+    .warn { background:#fff8e6; border:1px solid #ffe1a6; padding: 10px; border-radius: 12px; font-size: 12px; color:#6b4a00; line-height:1.35; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>3-Device Recovery Cross-Check</h1>
+  <div class="sub">
+    Local-first app (single-file). Can store data in browser storage, or in a real <span class="mono">data.json</span> file (recommended), and later sync to Supabase.
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Data Location</h2>
+      <div class="note">
+        <div><b>Current source:</b> <span id="dataSource" class="mono">localStorage</span></div>
+        <div class="small">Recommended: open a <span class="mono">data.json</span> file once, then use “Save to File” so your data lives in your folder.</div>
+      </div>
+
+      <div class="btnrow" style="margin-top:10px">
+        <button id="openFileBtn" class="secondary">Open data.json</button>
+        <button id="saveFileBtn" class="secondary" disabled>Save to File</button>
+        <button id="exportJsonBtn" class="secondary">Export JSON</button>
+        <button id="importJsonBtn" class="secondary">Import JSON</button>
+        <button id="exportCsvBtn" class="secondary">Export CSV</button>
+      </div>
+
+      <input id="importFileInput" type="file" accept="application/json" style="display:none" />
+
+      <div class="hr"></div>
+
+      <h2>Daily Entry</h2>
+
+      <label for="date">Date</label>
+      <input id="date" type="date" />
+
+      <div class="hr"></div>
+
+      <h2 style="margin-top:0">Device Metrics</h2>
+
+      <div class="row2">
+        <div>
+          <label for="mReady">Morpheus Readiness (%)</label>
+          <input id="mReady" type="number" step="1" min="0" max="100" />
+        </div>
+        <div>
+          <label for="mHrv">Morpheus HRV</label>
+          <input id="mHrv" type="number" step="1" min="0" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="ouraRec">Oura Recovery (0–100)</label>
+          <input id="ouraRec" type="number" step="1" min="0" max="100" />
+        </div>
+        <div>
+          <label for="whoopRec">Whoop Recovery (0–100) (optional)</label>
+          <input id="whoopRec" type="number" step="1" min="0" max="100" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="whoopRhr">Whoop RHR (bpm)</label>
+          <input id="whoopRhr" type="number" step="1" min="0" />
+        </div>
+        <div>
+          <label for="ouraRhr">Oura RHR (bpm)</label>
+          <input id="ouraRhr" type="number" step="1" min="0" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="steps">Steps (optional — fill later, after the day)</label>
+          <input id="steps" type="number" step="1" min="0" placeholder="Leave blank in the morning" />
+          <div class="small" style="margin-top:6px">
+            <label style="display:flex; gap:8px; align-items:center; margin:0">
+              <input id="morningEntry" type="checkbox" style="width:auto; margin:0" />
+              <span><b>Morning entry (steps pending)</b> — exclude steps from today’s Vote/Outliers until you fill them later.</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label for="fatigue">Fatigue (1–10)</label>
+          <input id="fatigue" type="number" step="1" min="1" max="10" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="resistance">Resistance Session?</label>
+          <select id="resistance">
+            <option value="N">No</option>
+            <option value="Y">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label for="joint">Joint/Tendon Warning (0–10)</label>
+          <input id="joint" type="number" step="1" min="0" max="10" />
+        </div>
+      </div>
+
+      <label for="notes">Notes</label>
+      <textarea id="notes" placeholder="sleep disruptions, meds timing, illness symptoms, travel, etc."></textarea>
+
+      <div class="hr"></div>
+
+      <div class="row2">
+        <div>
+          <label for="baseDays">Baseline window (days)</label>
+          <select id="baseDays">
+            <option value="7">7</option>
+            <option value="10">10</option>
+            <option value="14" selected>14</option>
+            <option value="21">21</option>
+          </select>
+        </div>
+        <div>
+          <label for="mode">Guardrail Mode</label>
+          <select id="mode">
+            <option value="standard">Standard</option>
+            <option value="adt" selected>ADT / joint-protective</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button id="addBtn">Add / Update Day</button>
+        <button id="clearBtn" class="secondary">Clear Form</button>
+        <button id="bundleBtn" class="secondary">Copy Analysis Bundle</button>
+        <button id="resetBtn" class="danger">Reset All Data</button>
+      </div>
+
+      <div class="warn" style="margin-top:12px">
+        Decision-support only, not diagnosis. If you have concerning symptoms, seek medical care.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="flex">
+        <h2 style="margin:0">Dashboard</h2>
+        <span class="pill right"><span class="muted">Entries:</span> <span id="entryCount" class="mono">0</span></span>
+        <span class="pill"><span class="muted">Baseline:</span> <span id="baselineLabel" class="mono">14d</span></span>
+        <span class="pill"><span class="muted">Mode:</span> <span id="modeLabel" class="mono">ADT</span></span>
+      </div>
+
+      <div class="kpi">
+        <div class="box">
+          <div class="lbl">Today’s Recommendation</div>
+          <div class="val" id="todayRec">—</div>
+          <div class="hint" id="todayWhy">Add an entry to see guidance.</div>
+        </div>
+        <div class="box">
+          <div class="lbl">Confidence (0–100)</div>
+          <div class="val" id="todayConf">—</div>
+          <div class="hint">Higher = devices agree + stable vs baseline.</div>
+        </div>
+        <div class="box">
+          <div class="lbl">Odd-One-Out Device</div>
+          <div class="val" id="oddOneOut">—</div>
+          <div class="hint" id="oddWhy">Detected when one source conflicts with the others + fatigue.</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Entries</h2>
+      <div class="small">Tap a row to load it into the form for editing.</div>
+
+      <div style="overflow:auto; max-height: 560px; margin-top:10px;">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Vote</th>
+              <th>Outliers</th>
+              <th>Conf</th>
+              <th>Rec</th>
+              <th class="muted">Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const LS_KEY = "three_device_recovery_entries_v2";
+  let fileHandle = null;
+
+  function loadEntries(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; } }
+  function saveEntries(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+  function byDateAsc(a,b){ return (a.date||"").localeCompare(b.date||""); }
+  function parseNum(v){ if (v === "" || v == null) return null; const x = Number(v); return Number.isFinite(x) ? x : null; }
+  function fmt(n, d=0){ if (n == null || Number.isNaN(n)) return ""; const x = Number(n); return Number.isFinite(x) ? x.toFixed(d) : ""; }
+  function mean(xs){ const a = xs.filter(x=>x!=null && Number.isFinite(x)); if (!a.length) return null; return a.reduce((p,c)=>p+c,0)/a.length; }
+  function sd(xs){ const a = xs.filter(x=>x!=null && Number.isFinite(x)); if (a.length < 2) return null; const m=mean(a); const v=a.reduce((p,c)=>p+(c-m)*(c-m),0)/(a.length-1); return Math.sqrt(v); }
+  function clamp(x,lo,hi){ return Math.max(lo, Math.min(hi, x)); }
+
+  const TODAY = new Date().toISOString().slice(0,10);
+
+  function syncMorningEntryUI(){
+    if (!window.els) return;
+    const d = els.date.value || TODAY;
+    const isToday = (d === TODAY);
+    // Default: if date is today, assume morning entry unless user explicitly turned it off
+    if (isToday && els.morningEntry.checked === false && els.morningEntry.dataset.userToggled !== "1"){
+      els.morningEntry.checked = true;
+    }
+    if (!isToday){
+      els.morningEntry.checked = false;
+      els.morningEntry.dataset.userToggled = "0";
+    }
+    const pending = els.morningEntry.checked && isToday;
+    els.steps.disabled = pending;
+    if (pending){
+      els.steps.value = "";
+    }
+  }
+
+  function setDataSourceLabel(){
+    const el = document.getElementById("dataSource");
+    el.textContent = fileHandle ? "data.json (file-backed)" : "localStorage";
+    document.getElementById("saveFileBtn").disabled = !fileHandle;
+  }
+
+  async function openDataFile(){
+    if (!window.showOpenFilePicker){
+      alert("File-backed saving requires Chrome/Edge on desktop. You can still use Export/Import in Safari.");
+      return;
+    }
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+      multiple: false
+    });
+    fileHandle = handle;
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    const data = JSON.parse(text || "[]");
+    if (!Array.isArray(data)) throw new Error("data.json must be an array.");
+    saveEntries(data.sort(byDateAsc));
+    setDataSourceLabel();
+    render();
+  }
+
+  async function saveDataFile(){
+    if (!fileHandle) return;
+    const data = loadEntries().sort(byDateAsc);
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+    setDataSourceLabel();
+    alert("Saved to data.json");
+  }
+
+  function exportJSON(){
+    const data = loadEntries().sort(byDateAsc);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="data.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function toCSV(entries){
+    const headers=["Date","MorpheusReady","MorpheusHRV","OuraRecovery","WhoopRecovery","WhoopRHR","OuraRHR","Steps","Fatigue","Resistance","JointWarn","Notes"];
+    const rows=[headers.join(",")];
+    for (const e of entries.sort(byDateAsc)){
+      const vals=[
+        e.date, e.mReady, e.mHrv, e.ouraRec, e.whoopRec, e.whoopRhr, e.ouraRhr,
+        e.steps, e.fatigue, e.resistance, e.joint, (e.notes||"").replaceAll('"','""')
+      ].map(v => (v==null?"":String(v)));
+      vals[vals.length-1] = `"${vals[vals.length-1]}"`;
+      rows.push(vals.join(","));
+    }
+    return rows.join("\n");
+  }
+
+  function exportCSV(){
+    const entries=loadEntries().sort(byDateAsc);
+    const csv=toCSV(entries);
+    const blob=new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="3-device-recovery-data.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function getThresholds(mode){
+    if (mode==="adt"){
+      return { zOutlier:1.6, rhrAbs:6, hrvDropPct:0.18, recDropAbs:10, fatigueHigh:6, fatigueLow:4, jointWarn:4,
+        disagreementPenalty:25, outlierPenalty:25, fatigueMismatchPenalty:25, trainingPenalty:10, stepsSwingPenalty:10 };
+    }
+    return { zOutlier:2.0, rhrAbs:8, hrvDropPct:0.22, recDropAbs:12, fatigueHigh:7, fatigueLow:4, jointWarn:5,
+      disagreementPenalty:20, outlierPenalty:20, fatigueMismatchPenalty:20, trainingPenalty:8, stepsSwingPenalty:8 };
+  }
+
+  function computeBaselines(entries, baselineDays, todayDate){
+    const sorted=[...entries].sort(byDateAsc);
+    const idx=sorted.findIndex(e=>e.date===todayDate);
+    const prior=(idx===-1?sorted:sorted.slice(0,idx));
+    const window=prior.slice(Math.max(0, prior.length-baselineDays));
+    const fields=["mReady","mHrv","ouraRec","whoopRec","whoopRhr","ouraRhr","steps","fatigue","joint"];
+    const base={};
+    for (const f of fields){
+      const xs=window.map(e=>e[f]);
+      base[f]={ mean:mean(xs), sd:sd(xs), n:xs.filter(x=>x!=null).length };
+    }
+    return base;
+  }
+
+  function classifyRecovery(entry){
+    const votes=[];
+    if (entry.mReady!=null) votes.push({device:"Morpheus", signal:"mReady", score: entry.mReady});
+    if (entry.ouraRec!=null) votes.push({device:"Oura", signal:"ouraRec", score: entry.ouraRec});
+    if (entry.whoopRec!=null) votes.push({device:"Whoop", signal:"whoopRec", score: entry.whoopRec});
+    else if (entry.whoopRhr!=null) votes.push({device:"Whoop", signal:"whoopRhrProxy", score: 120-entry.whoopRhr});
+    return votes;
+  }
+
+  function outlierFlags(entry, base, t){
+    const flags=[];
+    const zflag=(field, hint)=>{
+      const b=base[field];
+      if (!b || b.mean==null || entry[field]==null) return;
+      if (!b.sd || b.sd===0) return;
+      const z=(entry[field]-b.mean)/b.sd;
+      if (Math.abs(z) >= t.zOutlier) flags.push({field, kind:"z", z, hint});
+    };
+
+    zflag("mReady","Readiness");
+    zflag("mHrv","HRV");
+    zflag("ouraRec","Recovery");
+    zflag("whoopRec","Recovery");
+    zflag("whoopRhr","RHR");
+    zflag("ouraRhr","RHR");
+    // Steps are optional; do not treat missing/0-today as a physiological outlier
+    if (!(entry.date === TODAY && entry.steps === 0)) zflag("steps","Steps");
+    zflag("fatigue","Fatigue");
+
+    if (base.whoopRhr?.mean!=null && entry.whoopRhr!=null && (entry.whoopRhr-base.whoopRhr.mean)>=t.rhrAbs)
+      flags.push({field:"whoopRhr", kind:"abs", hint:`Whoop RHR +${t.rhrAbs} bpm vs baseline`});
+    if (base.ouraRhr?.mean!=null && entry.ouraRhr!=null && (entry.ouraRhr-base.ouraRhr.mean)>=t.rhrAbs)
+      flags.push({field:"ouraRhr", kind:"abs", hint:`Oura RHR +${t.rhrAbs} bpm vs baseline`});
+    if (base.mHrv?.mean!=null && entry.mHrv!=null){
+      const drop=(base.mHrv.mean-entry.mHrv)/base.mHrv.mean;
+      if (drop>=t.hrvDropPct) flags.push({field:"mHrv", kind:"pct", hint:`HRV drop ≥${Math.round(t.hrvDropPct*100)}% vs baseline`});
+    }
+    if (base.mReady?.mean!=null && entry.mReady!=null && (base.mReady.mean-entry.mReady)>=t.recDropAbs)
+      flags.push({field:"mReady", kind:"abs", hint:`Readiness drop ≥${t.recDropAbs}`});
+    if (base.ouraRec?.mean!=null && entry.ouraRec!=null && (base.ouraRec.mean-entry.ouraRec)>=t.recDropAbs)
+      flags.push({field:"ouraRec", kind:"abs", hint:`Recovery drop ≥${t.recDropAbs}`});
+    if (base.whoopRec?.mean!=null && entry.whoopRec!=null && (base.whoopRec.mean-entry.whoopRec)>=t.recDropAbs)
+      flags.push({field:"whoopRec", kind:"abs", hint:`Recovery drop ≥${t.recDropAbs}`});
+    return flags;
+  }
+
+  function computeDayAssessment(entry, entries, baselineDays, mode, _depth=0){
+    const t=getThresholds(mode);
+    const base=computeBaselines(entries, baselineDays, entry.date);
+    const flags=outlierFlags(entry, base, t);
+
+    // Morning workflow support: if steps are 0 on today's date, treat as missing (not a true zero-step day).
+    
+
+    const stepsMissing = !!entry.morningEntry || (entry.steps == null);
+
+
+    const votes=classifyRecovery(entry);
+    const voteResults=[];
+    for (const v of votes){
+      let bmean=null;
+      if (v.signal==="mReady") bmean=base.mReady?.mean;
+      if (v.signal==="ouraRec") bmean=base.ouraRec?.mean;
+      if (v.signal==="whoopRec") bmean=base.whoopRec?.mean;
+      if (v.signal==="whoopRhrProxy") bmean=(base.whoopRhr?.mean!=null ? 120-base.whoopRhr.mean : null);
+
+      let state="neutral";
+      if (bmean!=null && v.score!=null){
+        const delta=v.score-bmean;
+        if (delta>=2) state="ok";
+        else if (delta<=-2) state="stressed";
+      } else if (v.score!=null){
+        if (v.score>=70) state="ok";
+        else if (v.score<=45) state="stressed";
+      }
+      voteResults.push({device:v.device, state});
+    }
+
+    const okCount=voteResults.filter(x=>x.state==="ok").length;
+    const stCount=voteResults.filter(x=>x.state==="stressed").length;
+    let majority="mixed";
+    if (okCount>=2) majority="ok";
+    if (stCount>=2) majority="stressed";
+
+    let fatigueSignal="unknown";
+    if (entry.fatigue!=null){
+      if (entry.fatigue>=t.fatigueHigh) fatigueSignal="stressed";
+      else if (entry.fatigue<=t.fatigueLow) fatigueSignal="ok";
+      else fatigueSignal="neutral";
+    }
+
+    const disagreement = (majority==="mixed") ? true : (voteResults.some(v=>v.state!=="neutral" && v.state!==majority));
+    const fatigueMismatch = (fatigueSignal!=="unknown" && fatigueSignal!=="neutral" && majority!=="mixed" && fatigueSignal!==majority);
+
+    let conf=100;
+    const outlierCount=(new Set(flags.map(f=>f.field))).size;
+    conf -= outlierCount * t.outlierPenalty;
+    if (disagreement) conf -= t.disagreementPenalty;
+    if (fatigueMismatch) conf -= t.fatigueMismatchPenalty;
+    if (entry.resistance==="Y") conf -= t.trainingPenalty;
+
+    if (!stepsMissing && base.steps?.mean!=null && entry.steps!=null && base.steps.mean>0){
+      const swing=Math.abs(entry.steps-base.steps.mean)/base.steps.mean;
+      if (swing>0.30) conf -= t.stepsSwingPenalty;
+    }
+    conf=clamp(conf,0,100);
+
+    const outlierFields=new Set(flags.map(f=>f.field));
+    const deviceFields={ Morpheus:["mReady","mHrv"], Oura:["ouraRec","ouraRhr"], Whoop:["whoopRec","whoopRhr"] };
+    let odd=null, oddWhy="";
+    if (majority!=="mixed" && voteResults.length>=2){
+      const candidates=voteResults.filter(v=>v.state!=="neutral" && v.state!==majority);
+      if (candidates.length===1){
+        const c=candidates[0];
+        const fields=deviceFields[c.device]||[];
+        const hasOutlier=fields.some(f=>outlierFields.has(f));
+        const disagreesWithFatigue=(fatigueSignal!=="unknown" && fatigueSignal!=="neutral" && c.state!==fatigueSignal);
+        if (hasOutlier && (fatigueSignal==="unknown" || disagreesWithFatigue)){
+          odd=c.device;
+          oddWhy=`Conflicts with majority (${majority}) and shows outlier behavior in ${fields.filter(f=>outlierFields.has(f)).join(", ") || "device metrics"}.`;
+        }
+      }
+    }
+
+    let rec="Green";
+    const why=[];
+    if (conf<55) rec="Red";
+    else if (conf<80) rec="Yellow";
+
+    if (entry.joint!=null && entry.joint>=t.jointWarn){
+      if (rec==="Green") rec="Yellow";
+      why.push(`Joint warning ${entry.joint}/10 → joint-protective bias.`);
+    }
+    if (fatigueSignal==="stressed"){
+      if (rec==="Green") rec="Yellow";
+      if (conf<55) rec="Red";
+      why.push(`Fatigue ${entry.fatigue}/10 indicates strain.`);
+    }
+    if (outlierCount) why.push(`${outlierCount} outlier signal(s) vs baseline.`);
+    if (disagreement) why.push(`Devices disagree → uncertainty day.`);
+    if (!why.length) why.push("Stable vs baseline; devices mostly consistent.");
+    // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
+    let cycleLabel = "";
+    if (_depth===0){
+      // Heuristic: stressed morning physiology + fatigue, but prior 1-2 days were OK and no training signal.
+      try{
+        const sorted=entries.slice().sort(byDateAsc);
+        const idx=sorted.findIndex(e=>e.date===entry.date);
+        const prev1 = idx>0 ? sorted[idx-1] : null;
+        const prev2 = idx>1 ? sorted[idx-2] : null;
+        const prevAssess1 = prev1 ? computeDayAssessment(prev1, sorted, baselineDays, mode, _depth+1) : null;
+        const prevAssess2 = prev2 ? computeDayAssessment(prev2, sorted, baselineDays, mode, _depth+1) : null;
+
+        const stressedNow = (majority==="stressed" || fatigueSignal==="stressed");
+        const wasOkRecently = (
+          (prevAssess1 && (prevAssess1.majority==="ok" || prevAssess1.recColor==="Yellow")) ||
+          (prevAssess2 && (prevAssess2.majority==="ok" || prevAssess2.recColor==="Yellow"))
+        );
+        const noTraining = entry.resistance!=="Y";
+        const morningPattern = (entry.fatigue!=null && entry.fatigue>=t.fatigueHigh);
+        if (mode==="adt" && stressedNow && wasOkRecently && noTraining && morningPattern && !disagreement){
+          cycleLabel = "Post-regulation dip";
+        }
+      } catch(e){}
+    }
+    // Recommendation display text (separate from color)
+    // In ADT/CFS context: movement is the default; we modulate intensity + intent.
+    let recColor = rec; // Green/Yellow/Red
+    let recText = rec;
+
+    // Explanatory notes
+    if (cycleLabel){
+      why.push("Pattern suggests a post‑regulation dip (common in ADT/CFS physiology): protect the morning and reassess later in the day.");
+    }
+    if (stepsMissing){
+      why.push("Steps not yet entered (morning entry) → steps excluded from outliers/confidence.");
+    }
+
+    // Movement guidance phrases
+    const moveGoWolf = "Go Wolf";
+    const moveEasy = "Go Easy, Check Later";
+    const moveScout = "Go Slow, Scout";
+    const moveRest = "Rest, Then Resume";
+
+    // Human-friendly Recommendation labels + plans
+    let plan = "";
+    if (recColor==="Green"){
+      recText = `Maintain Rhythm — Go Wolf (${moveGoWolf})`;
+      plan = "Maintain rhythm: walk naturally; hills allowed if they feel good; no need to police zones. Strength work only if it improves symptoms; stop for joint pain.";
+    } else if (recColor==="Yellow"){
+      recText = `Modulate & Observe — Stay in Motion (${moveEasy})`;
+      plan = "Modulate: keep the walk easy/conversational; prefer flatter routes; avoid 'testing' the system. Reassess after ~3–5 pm before adding intensity.";
+    } else { // Red
+      if (cycleLabel){
+        recText = `Morning Protection — Prime, Don’t Train (${moveScout})`;
+        plan = "Morning protection: keep the morning gentle. Short, easy walk only if it lightens heaviness; stop early; avoid experiments; reassess after ~3–5 pm; prioritize sleep/hydration.";
+      } else {
+        recText = `Morning Protection — Prime, Don’t Train (${moveRest})`;
+        plan = "Protect the system: rest first. Very easy movement only if clearly regulating (minutes, not miles). Resume normal walking once symptoms settle; prioritize sleep/hydration.";
+      }
+    }
+
+    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf,
+      oddOneOut:odd, oddWhy, recColor, recText, cycleLabel, why:why.join(" "), plan };
+
+  }
+
+  const els = {
+    date: document.getElementById("date"),
+    mReady: document.getElementById("mReady"),
+    mHrv: document.getElementById("mHrv"),
+    ouraRec: document.getElementById("ouraRec"),
+    whoopRec: document.getElementById("whoopRec"),
+    whoopRhr: document.getElementById("whoopRhr"),
+    ouraRhr: document.getElementById("ouraRhr"),
+    steps: document.getElementById("steps"),
+    morningEntry: document.getElementById("morningEntry"),
+    fatigue: document.getElementById("fatigue"),
+    resistance: document.getElementById("resistance"),
+    joint: document.getElementById("joint"),
+    notes: document.getElementById("notes"),
+    baseDays: document.getElementById("baseDays"),
+    mode: document.getElementById("mode"),
+    importFileInput: document.getElementById("importFileInput")
+  };
+
+// Morning-entry UI logic
+els.morningEntry.addEventListener('change', () => {
+  els.morningEntry.dataset.userToggled = '1';
+  syncMorningEntryUI();
+});
+els.date.addEventListener('change', syncMorningEntryUI);
+// Initialize defaults
+if (!els.date.value) els.date.value = TODAY;
+syncMorningEntryUI();
+
+
+  function getFormEntry(){
+    const date = els.date.value;
+    if (!date) return null;
+
+    // Steps are an *outcome* of the day. In the morning, leave blank.
+    // If a user enters 0 on the same day (common when entering morning state), treat it as missing.
+    
+
+    const stepsRaw = parseNum(els.steps.value);
+    const morningEntry = (els.morningEntry.checked && date === TODAY);
+    // If morning entry, steps are pending and excluded until filled later
+    const steps = morningEntry ? null : stepsRaw;
+
+    return {
+      date,
+      mReady: parseNum(els.mReady.value),
+      mHrv: parseNum(els.mHrv.value),
+      ouraRec: parseNum(els.ouraRec.value),
+      whoopRec: parseNum(els.whoopRec.value),
+      whoopRhr: parseNum(els.whoopRhr.value),
+      ouraRhr: parseNum(els.ouraRhr.value),
+      steps,
+      morningEntry,
+      fatigue: parseNum(els.fatigue.value),
+      resistance: els.resistance.value || "N",
+      joint: parseNum(els.joint.value),
+      notes: (els.notes.value || "").trim()
+    };
+  }
+
+  function setFormEntry(e){
+    els.date.value = e.date || "";
+    els.mReady.value = e.mReady ?? "";
+    els.mHrv.value = e.mHrv ?? "";
+    els.ouraRec.value = e.ouraRec ?? "";
+    els.whoopRec.value = e.whoopRec ?? "";
+    els.whoopRhr.value = e.whoopRhr ?? "";
+    els.ouraRhr.value = e.ouraRhr ?? "";
+    els.steps.value = e.steps ?? "";
+      // Restore morning-entry flag only when date is today
+      els.morningEntry.checked = !!e.morningEntry && (e.date === TODAY);
+      els.morningEntry.dataset.userToggled = "1";
+      syncMorningEntryUI();
+    els.fatigue.value = e.fatigue ?? "";
+    els.resistance.value = e.resistance || "N";
+    els.joint.value = e.joint ?? "";
+    els.notes.value = e.notes || "";
+  }
+
+  function clearForm(){
+    setFormEntry({ date: TODAY, resistance:"N" });
+  }
+
+  function upsertEntry(newEntry){
+    const entries = loadEntries();
+    const i = entries.findIndex(e => e.date === newEntry.date);
+    if (i >= 0) entries[i] = newEntry; else entries.push(newEntry);
+    saveEntries(entries.sort(byDateAsc));
+  }
+
+  async function copyText(text){
+    try { await navigator.clipboard.writeText(text); alert("Copied."); }
+    catch {
+      const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); ta.remove(); alert("Copied.");
+    }
+  }
+
+  
+  function voteLabelFromAssess(assess){
+    // Human-friendly vote labels for ADT/CFS regulation cycles
+    if (assess.cycleLabel) return "POST-REGULATION DIP";
+    if (assess.majority==="ok") return "REGULATED";
+    if (assess.majority==="mixed") return "TRANSITIONAL";
+    if (assess.majority==="stressed") return "DYSREGULATED";
+    return String(assess.majority||"").toUpperCase();
+  }
+
+  function voteClassFromAssess(assess){
+    if (assess.cycleLabel) return "yellow";
+    if (assess.majority==="ok") return "green";
+    if (assess.majority==="stressed") return "red";
+    return "yellow";
+  }
+function makeAnalysisBundle(entries){
+    if (!entries.length) return "No entries yet.";
+    const baseDays = Number(els.baseDays.value);
+    const mode = els.mode.value;
+    const latest = entries.sort(byDateAsc)[entries.length - 1];
+    const assess = computeDayAssessment(latest, entries, baseDays, mode);
+
+    const lines=[];
+    lines.push("ANALYSIS BUNDLE — 3-Device Cross-Check");
+    lines.push(`Mode=${mode.toUpperCase()} Baseline=${baseDays}d Entries=${entries.length}`);
+    lines.push(`Latest=${latest.date}`);
+    lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes||""}"`);
+    lines.push("");
+    const majLabel = voteLabelFromAssess(assess);
+    lines.push(`Majority=${majLabel} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement?"YES":"NO"} Conf=${assess.conf}/100`);
+    lines.push(`Recommendation=${assess.recText} Plan=${assess.plan}`);
+    lines.push(`OddOneOut=${assess.oddOneOut||"None"} ${assess.oddOneOut?("— "+assess.oddWhy):""}`);
+    lines.push("");
+    lines.push("Outliers:");
+    if (!assess.flags.length) lines.push("- none");
+    else assess.flags.forEach(f => lines.push(`- ${f.field}: ${f.kind==="z" ? ("z="+fmt(f.z,2)) : f.kind} (${f.hint||""})`));
+    lines.push("");
+    lines.push("Recent (7):");
+    entries.sort(byDateAsc).slice(-7).reverse().forEach(e=>{
+      lines.push(`- ${e.date}: mReady=${fmt(e.mReady)} mHRV=${fmt(e.mHrv)} ouraRec=${fmt(e.ouraRec)} whoopRec=${fmt(e.whoopRec)} whoopRHR=${fmt(e.whoopRhr)} ouraRHR=${fmt(e.ouraRhr)} steps=${fmt(e.steps)} fatigue=${fmt(e.fatigue)} res=${e.resistance} joint=${fmt(e.joint)} notes="${e.notes||""}"`);
+    });
+    return lines.join("\n");
+  }
+
+  function render(){
+    const entries = loadEntries().sort(byDateAsc);
+    document.getElementById("entryCount").textContent = String(entries.length);
+    document.getElementById("baselineLabel").textContent = `${els.baseDays.value}d`;
+    document.getElementById("modeLabel").textContent = els.mode.value === "adt" ? "ADT" : "Standard";
+
+    const latest = entries.length ? entries[entries.length-1] : null;
+    if (latest){
+      const assess = computeDayAssessment(latest, entries, Number(els.baseDays.value), els.mode.value);
+      document.getElementById("todayRec").textContent = assess.recText;
+      document.getElementById("todayWhy").textContent = `${assess.why} Plan: ${assess.plan}`;
+      document.getElementById("todayConf").textContent = String(assess.conf);
+      document.getElementById("oddOneOut").textContent = assess.oddOneOut || "—";
+      document.getElementById("oddWhy").textContent = assess.oddOneOut ? assess.oddWhy : "No single device is the lone contradiction today.";
+    } else {
+      document.getElementById("todayRec").textContent = "—";
+      document.getElementById("todayWhy").textContent = "Add an entry to see guidance.";
+      document.getElementById("todayConf").textContent = "—";
+      document.getElementById("oddOneOut").textContent = "—";
+      document.getElementById("oddWhy").textContent = "—";
+    }
+
+    const tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = "";
+    for (const e of entries.slice().reverse()){
+      const assess = computeDayAssessment(e, entries, Number(els.baseDays.value), els.mode.value);
+      const outlierFields = [...new Set(assess.flags.map(f=>f.field))];
+      const voteTxt = voteLabelFromAssess(assess);
+      const recClass = assess.recColor==="Green" ? "green" : assess.recColor==="Yellow" ? "yellow" : "red";
+      const voteClass = voteClassFromAssess(assess);
+      const noteTxt = (e.notes||"").slice(0,60);
+
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${e.date}</td>
+        <td><span class="tag ${voteClass}">${voteTxt}</span></td>
+        <td class="mono">${outlierFields.length ? outlierFields.join(", ") : "—"}</td>
+        <td class="mono">${assess.conf}</td>
+        <td><span class="tag ${recClass}">${assess.recText}</span></td>
+        <td class="muted">${noteTxt}${(e.notes||"").length>60?"…":""}</td>
+      `;
+      tr.style.cursor="pointer";
+      tr.addEventListener("click", ()=>setFormEntry(e));
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById("openFileBtn").addEventListener("click", async ()=>{
+    try { await openDataFile(); } catch (e){ alert("Open failed: " + (e?.message || String(e))); }
+  });
+  document.getElementById("saveFileBtn").addEventListener("click", async ()=>{
+    try { await saveDataFile(); } catch (e){ alert("Save failed: " + (e?.message || String(e))); }
+  });
+  document.getElementById("exportJsonBtn").addEventListener("click", exportJSON);
+  document.getElementById("exportCsvBtn").addEventListener("click", exportCSV);
+
+  document.getElementById("importJsonBtn").addEventListener("click", ()=>{
+    els.importFileInput.value="";
+    els.importFileInput.click();
+  });
+  els.importFileInput.addEventListener("change", async (ev)=>{
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    try{
+      const data = JSON.parse(text||"[]");
+      if (!Array.isArray(data)) throw new Error("JSON must be an array of entries.");
+      saveEntries(data.sort(byDateAsc));
+      render();
+      alert("Imported JSON.");
+    } catch(e){
+      alert("Import failed: " + (e?.message || String(e)));
+    }
+  });
+
+  document.getElementById("addBtn").addEventListener("click", async ()=>{
+    const entry=getFormEntry();
+    if (!entry){ alert("Pick a date."); return; }
+    upsertEntry(entry);
+    render();
+    if (fileHandle){ try { await saveDataFile(); } catch {} }
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", ()=>clearForm());
+  document.getElementById("bundleBtn").addEventListener("click", async ()=>{ await copyText(makeAnalysisBundle(loadEntries())); });
+
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+    if (!confirm("Delete all stored data in this browser?")) return;
+    localStorage.removeItem(LS_KEY);
+    fileHandle=null;
+    setDataSourceLabel();
+    clearForm();
+    render();
+  });
+
+  els.baseDays.addEventListener("change", render);
+  els.mode.addEventListener("change", render);
+
+  clearForm();
+  setDataSourceLabel();
+  render();
+
+
+  // --- Sticky table header offset fix (iOS/Safari friendly) ---
+  function setStickyOffsets(){
+    const hdr = document.querySelector('header');
+    const h = hdr ? Math.round(hdr.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--headerH', h + 'px');
+  }
+  window.addEventListener('resize', setStickyOffsets);
+  window.addEventListener('orientationchange', () => setTimeout(setStickyOffsets, 50));
+  // Run after initial layout and after fonts load
+  setStickyOffsets();
+  setTimeout(setStickyOffsets, 50);
+  setTimeout(setStickyOffsets, 250);
+
+</script>
+</body>
+</html>
+<!-- Recommendation Distinctions -->
+<div class="rec-legend">
+  <h4>Movement Guidance (ADT / CFS)</h4>
+  <ul>
+    <li><strong>Maintain Rhythm — Go Wolf:</strong> Full walk. Natural pace. Hills allowed. Movement is the regulator.</li>
+    <li><strong>Modulate & Observe — Stay in Motion:</strong> Full walk, gentler. End better than you started.</li>
+    <li><strong>Morning Protection — Prime, Don’t Train:</strong> Short (10–30 min). Flat, slow, exploratory only.</li>
+    <li><strong>Restore First — Movement Only If Regulating:</strong> Very short or none. Stability before motion.</li>
+  </ul>
+</div>
