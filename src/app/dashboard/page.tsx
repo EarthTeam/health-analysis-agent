@@ -150,15 +150,34 @@ export default function DashboardPage() {
                         <p className="text-xs text-muted-foreground mt-2">Higher = devices agree + stable vs baseline.</p>
                     </div>
 
-                    {/* Odd One Out Card */}
+                    {/* Outliers Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Odd One Out</h3>
-                        <div className="text-xl font-bold text-foreground">
-                            {assessment.oddOneOut || "None"}
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Outliers</h3>
+                        <div className="space-y-2 mt-2">
+                            {assessment.flags.length > 0 ? (
+                                <ul className="space-y-1.5">
+                                    {assessment.flags.map((f, i) => (
+                                        <li key={i} className="flex items-center gap-2 text-sm font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-100">
+                                            <AlertCircle className="w-3.5 h-3.5" />
+                                            {f.hint}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 flex items-center gap-2">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    No outlier signals
+                                </p>
+                            )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                            {assessment.oddOneOut ? assessment.oddWhy : "Devices are mostly consistent today."}
-                        </p>
+
+                        {assessment.oddOneOut && (
+                            <div className="mt-4 pt-4 border-t border-border">
+                                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Device Conflict</h4>
+                                <p className="text-xs font-bold text-foreground">{assessment.oddOneOut}</p>
+                                <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{assessment.oddWhy}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
