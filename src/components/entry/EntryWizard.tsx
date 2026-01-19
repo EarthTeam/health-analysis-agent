@@ -70,8 +70,10 @@ export function EntryWizard() {
             mHrv: formData.mHrv ?? null,
             ouraRec: formData.ouraRec ?? null,
             ouraRhr: formData.ouraRhr ?? null,
+            ouraHrv: formData.ouraHrv ?? null,
             whoopRec: formData.whoopRec ?? null,
             whoopRhr: formData.whoopRhr ?? null,
+            whoopHrv: formData.whoopHrv ?? null,
             steps: morningEntry ? null : (formData.steps ?? null),
             morningEntry,
             fatigue: formData.fatigue ?? null,
@@ -136,6 +138,16 @@ export function EntryWizard() {
                                     placeholder="e.g. 55"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Oura Nightly HRV</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-3 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-lg"
+                                    value={formData.ouraHrv ?? ""}
+                                    onChange={(e) => updateField("ouraHrv", e.target.value === "" ? null : Number(e.target.value))}
+                                    placeholder="e.g. 65"
+                                />
+                            </div>
                         </div>
                     </div>
                 );
@@ -161,6 +173,16 @@ export function EntryWizard() {
                                     value={formData.whoopRhr ?? ""}
                                     onChange={(e) => updateField("whoopRhr", e.target.value === "" ? null : Number(e.target.value))}
                                     placeholder="e.g. 58"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Whoop Nightly HRV</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-3 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-lg"
+                                    value={formData.whoopHrv ?? ""}
+                                    onChange={(e) => updateField("whoopHrv", e.target.value === "" ? null : Number(e.target.value))}
+                                    placeholder="e.g. 70"
                                 />
                             </div>
                         </div>

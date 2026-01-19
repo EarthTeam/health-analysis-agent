@@ -70,7 +70,7 @@ export function computeBaselines(
     const window = prior.slice(Math.max(0, prior.length - baselineDays));
 
     const fields: (keyof DailyEntry)[] = [
-        "mReady", "mHrv", "ouraRec", "whoopRec", "whoopRhr", "ouraRhr", "steps", "fatigue", "joint"
+        "mReady", "mHrv", "ouraRec", "whoopRec", "whoopRhr", "ouraRhr", "ouraHrv", "whoopHrv", "steps", "fatigue", "joint"
     ];
 
     const base: any = {};
@@ -408,24 +408,23 @@ export function computeDayAssessment(
     const calculateLoadMemory = (targetDate: string, allEntries: DailyEntry[]) => {
         const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === targetDate);
-        if (idx === -1) return 0;
+        if (idx === -1) return { total: 0, array: [0, 0, 0] };
 
-        let memory = 0;
-        const stepThreshold = 9000;
+        const stepThreshold = 9500;
 
-        // Today
-        if ((sorted[idx].steps || 0) >= stepThreshold) memory += 1.0;
-        // Yesterday (50% decay)
-        if (idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold) memory += 0.5;
-        // 2 days ago (25% decay)
-        if (idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold) memory += 0.25;
+        const d0 = (sorted[idx].steps || 0) >= stepThreshold ? 1.0 : 0;
+        const d1 = idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold ? 0.5 : 0;
+        const d2 = idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
 
-        return Math.min(memory, 1.5); // Cap the heat
+        return {
+            total: Math.min(d0 + d1 + d2, 1.5),
+            array: [d2, d1, d0]
+        };
     };
 
-    const loadMemory = calculateLoadMemory(entry.date, entries);
+    const { total: loadMemory, array: loadHeatArray } = calculateLoadMemory(entry.date, entries);
 
-    // --- Crash Signature Logic (v1) ---
+    // --- Crash Signature Logic (v2) ---
     const getCrashScore = (targetDate: string, allEntries: DailyEntry[]) => {
         const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === targetDate);
@@ -457,11 +456,20 @@ export function computeDayAssessment(
 
         // 5. Convergence check
         const recoveryLow = window.filter(e => (e.ouraRec || 0) < 50 || (e.whoopRec || 0) < 50).length >= 2;
-        if (recoveryLow) score += 1;
+        if (recoveryLow) score += 2;
 
         // 6. Joint/Pain Sensitivity
         const painActive = window.filter(e => (e.joint || 0) >= t.jointWarn).length >= 2;
         if (painActive) score += 1;
+
+        // 7. Oura HRV Suppression (Phase 2 - Slow Signal)
+        const ouraHrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
+        if (ouraHrvs.length >= 2) {
+            const avgOura = ouraHrvs.reduce((a, b) => a + b, 0) / ouraHrvs.length;
+            if (base.ouraHrv?.mean && avgOura < base.ouraHrv.mean * 0.85) {
+                score += 1;
+            }
+        }
 
         return score;
     };
@@ -494,7 +502,7 @@ export function computeDayAssessment(
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, cycleLabel
+        crashStatus, loadMemory, loadHeatArray, cycleLabel
     };
 }
 

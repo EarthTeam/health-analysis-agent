@@ -8,10 +8,12 @@ export interface DailyEntry {
     // Oura
     ouraRec: number | null;
     ouraRhr: number | null;
+    ouraHrv: number | null;
 
     // Whoop
     whoopRec: number | null;
     whoopRhr: number | null;
+    whoopHrv: number | null;
 
     // Other
     steps: number | null;
@@ -51,6 +53,7 @@ export interface DayAssessment {
     scoutCheck: string;
     crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
     loadMemory: number;
+    loadHeatArray: number[];
     cycleLabel?: string;
 }
 

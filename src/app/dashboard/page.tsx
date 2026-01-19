@@ -11,12 +11,17 @@ export default function DashboardPage() {
     const { entries, settings } = useStore();
     const [copied, setCopied] = useState(false);
 
-    const assessment = useMemo(() => {
+    const assessmentResult = useMemo(() => {
         if (!entries.length) return null;
         const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
         const latest = sorted[sorted.length - 1];
-        return computeDayAssessment(latest, entries, settings.baselineDays, settings.mode);
+        return {
+            assessment: computeDayAssessment(latest, entries, settings.baselineDays, settings.mode),
+            latest
+        };
     }, [entries, settings]);
+
+    const { assessment, latest } = assessmentResult || { assessment: null, latest: null };
 
     const chartData = useMemo(() => {
         if (!entries.length) return [];
@@ -41,7 +46,7 @@ export default function DashboardPage() {
         });
     }, [entries, settings]);
 
-    const latestDate = entries.length ? [...entries].sort((a, b) => a.date.localeCompare(b.date)).pop()?.date : null;
+    const latestDate = latest?.date || null;
 
     const handleCopyBundle = async () => {
         const text = makeAnalysisBundle(entries, settings);
@@ -55,7 +60,7 @@ export default function DashboardPage() {
         }
     };
 
-    if (!assessment) {
+    if (!assessment || !latest) {
         return (
             <div className="flex flex-col items-center justify-center p-12 bg-card rounded-2xl border border-dashed border-border text-center">
                 <Activity className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
@@ -205,6 +210,26 @@ export default function DashboardPage() {
                                 <div className={cn("h-full flex-1 transition-all", ["Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-red-500" : "bg-secondary")} />
                                 <div className={cn("h-full flex-1 transition-all", assessment.crashStatus === "Crash-State" ? "bg-red-700" : "bg-secondary")} />
                             </div>
+
+                            {/* Lag Seismograph */}
+                            <div className="pt-3 border-t border-border mt-2">
+                                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Lag Seismograph (Oura/Whoop)</h4>
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={cn("w-1.5 h-1.5 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
+                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Recovery Suppression</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={cn("w-1.5 h-1.5 rounded-full", (latest.ouraHrv || 0) < (latest.mHrv || 0) * 0.7 ? "bg-red-500" : "bg-emerald-500")} />
+                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Nightly Parasympathetic Lag</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">24-48h SENSITIVE</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -221,11 +246,36 @@ export default function DashboardPage() {
                                 {assessment.loadMemory > 0 ? "STILL HOT" : "COOL"}
                             </span>
                         </div>
-                        <div className="flex items-end gap-2">
-                            <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
-                            <span className="text-xs text-muted-foreground mb-1">heat index</span>
+                        <div className="flex items-end gap-4">
+                            <div>
+                                <div className="flex items-end gap-2">
+                                    <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
+                                    <span className="text-xs text-muted-foreground mb-1">heat</span>
+                                </div>
+                            </div>
+
+                            {/* Decay Visualization */}
+                            <div className="flex-1 flex gap-1 h-12 items-end mb-1">
+                                {assessment.loadHeatArray.map((h, i) => (
+                                    <div
+                                        key={i}
+                                        className={cn(
+                                            "flex-1 rounded-t-sm transition-all duration-500",
+                                            h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary"
+                                        )}
+                                        style={{ height: `${(h / 1.0) * 100}%`, minHeight: h > 0 ? '4px' : '2px' }}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed italic">
+
+                        <div className="flex justify-between text-[8px] text-muted-foreground uppercase tracking-tighter mt-1">
+                            <span>-48h</span>
+                            <span>-24h</span>
+                            <span>Today</span>
+                        </div>
+
+                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed italic border-t border-border pt-2">
                             How much recent load is the system still processing?
                         </p>
                     </div>
