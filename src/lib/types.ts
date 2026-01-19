@@ -42,8 +42,8 @@ export interface DayAssessment {
     oddWhy: string;
     rec: RecColor;
     recText: string;
-    why: string;
-    plan: string;
+    why: string[];
+    plan: string[];
     cycleLabel?: string;
 }
 

@@ -316,37 +316,49 @@ export function computeDayAssessment(
     const moveRest = "Rest, Then Resume";
 
     let recText = "";
-    let plan = "";
+    const plan: string[] = [];
 
     if (rec === "Green") {
         recText = `Maintain Rhythm — Go Wolf (${moveGoWolf})`;
-        plan = "Maintain rhythm: walk naturally; hills allowed if they feel good; no need to police zones. Strength work only if it improves symptoms; stop for joint pain.";
+        plan.push("Maintain rhythm: walk naturally; hills allowed if they feel good; no need to police zones.");
+        plan.push("Strength work only if it improves symptoms; stop for joint pain.");
     } else if (rec === "Yellow") {
         recText = `Modulate & Observe — Stay in Motion (${moveEasy})`;
-        plan = "Modulate: keep the walk easy/conversational; prefer flatter routes; avoid 'testing' the system. Reassess after ~3–5 pm before adding intensity.";
+        plan.push("Modulate: keep the walk easy/conversational; prefer flatter routes; avoid 'testing' the system.");
+        plan.push("Reassess after ~3–5 pm before adding intensity.");
     } else { // Red
         if (cycleLabel) {
             recText = `Morning Protection — Prime, Don’t Train (${moveScout})`;
-            plan = "Morning protection: keep the morning gentle. Short, easy walk only if it lightens heaviness; stop early; avoid experiments; reassess after ~3–5 pm; prioritize sleep/hydration.";
+            plan.push("Morning protection: keep the morning gentle.");
+            plan.push("Short, easy walk only if it lightens heaviness; stop early; avoid experiments.");
+            plan.push("Reassess after ~3–5 pm; prioritize sleep/hydration.");
         } else {
             recText = `Morning Protection — Prime, Don’t Train (${moveRest})`;
-            plan = "Protect the system: rest first. Very easy movement only if clearly regulating (minutes, not miles). Resume normal walking once symptoms settle; prioritize sleep/hydration.";
+            plan.push("Protect the system: rest first.");
+            plan.push("Very easy movement only if clearly regulating (minutes, not miles).");
+            plan.push("Resume normal walking once symptoms settle; prioritize sleep/hydration.");
         }
     }
 
     // Load sequencing override
     if (mode === "adt" && loadStackFlag && rec !== "Red") {
         why.push(`Load sequencing: two consecutive high-step days (≥${HIGH_STEPS.toLocaleString()} steps) detected → Scout day to prevent delayed dysregulation.`);
+        plan.length = 0; // Clear and replace with scout plan
         if (rec === "Green") {
             recText = `REGULATED — Scout Day (${moveScout})`;
-            plan = "Scout day: move to maintain trust, but de-stack load. Shorter or flatter walk; conversational pace; hills allowed but not chased. End feeling you could do more. Skip strength unless it clearly improves symptoms and joints feel safe.";
+            plan.push("Scout day: move to maintain trust, but de-stack load.");
+            plan.push("Shorter or flatter walk; conversational pace; hills allowed but not chased.");
+            plan.push("End feeling you could do more.");
+            plan.push("Skip strength unless it clearly improves symptoms and joints feel safe.");
         } else {
             recText = `Modulate & Observe — Scout Day (${moveScout})`;
-            plan = "Scout day: keep movement, reduce demand. Prefer flatter route and easy pace; avoid testing the system. Reassess after ~3–5 pm before adding any intensity.";
+            plan.push("Scout day: keep movement, reduce demand.");
+            plan.push("Prefer flatter route and easy pace; avoid testing the system.");
+            plan.push("Reassess after ~3–5 pm before adding any intensity.");
         }
     }
 
-    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why: why.join(" "), plan, cycleLabel };
+    return { flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch, conf, oddOneOut: odd, oddWhy, rec, recText, why, plan, cycleLabel };
 }
 
 export function voteLabelFromAssess(assess: DayAssessment): string {
@@ -379,8 +391,13 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
-    lines.push(`Recommendation=${assess.recText} Plan=${assess.plan}`);
+    lines.push(`Recommendation=${assess.recText}`);
+    lines.push("Plan:");
+    assess.plan.forEach(p => lines.push(`- ${p}`));
     lines.push(`OddOneOut=${assess.oddOneOut || "None"} ${assess.oddOneOut ? ("— " + assess.oddWhy) : ""}`);
+    lines.push("");
+    lines.push("Why:");
+    assess.why.forEach(w => lines.push(`- ${w}`));
     lines.push("");
     lines.push("Outliers:");
     if (!assess.flags.length) lines.push("- none");

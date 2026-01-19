@@ -5,6 +5,7 @@ import { computeDayAssessment, makeAnalysisBundle, voteLabelFromAssess } from "@
 import { useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from "recharts";
 
 export default function DashboardPage() {
     const { entries, settings } = useStore();
@@ -12,8 +13,32 @@ export default function DashboardPage() {
 
     const assessment = useMemo(() => {
         if (!entries.length) return null;
-        const latest = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || "")).pop()!;
+        const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+        const latest = sorted[sorted.length - 1];
         return computeDayAssessment(latest, entries, settings.baselineDays, settings.mode);
+    }, [entries, settings]);
+
+    const chartData = useMemo(() => {
+        if (!entries.length) return [];
+        const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+        const window = sorted.slice(-settings.baselineDays);
+
+        return window.map(entry => {
+            const assess = computeDayAssessment(entry, entries, settings.baselineDays, settings.mode);
+
+            // Map majority state to numeric for graphing
+            let regulationVal = 50; // Neutral/Mixed
+            if (assess.majority === "ok") regulationVal = 100;
+            if (assess.majority === "stressed") regulationVal = 0;
+            if (assess.cycleLabel) regulationVal = 25; // Special value for Dip
+
+            return {
+                date: entry.date.split("-").slice(1).join("/"), // MM/DD for compactness
+                confidence: assess.conf,
+                regulation: regulationVal,
+                fullDate: entry.date
+            };
+        });
     }, [entries, settings]);
 
     const latestDate = entries.length ? [...entries].sort((a, b) => a.date.localeCompare(b.date)).pop()?.date : null;
@@ -49,7 +74,7 @@ export default function DashboardPage() {
     const icon = recColor === "Green" ? <CheckCircle2 className="w-8 h-8" /> : recColor === "Yellow" ? <AlertTriangle className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />;
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Recommendation Card */}
                 <div className="col-span-1 md:col-span-2 bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
@@ -57,7 +82,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between mb-6">
                         <div>
                             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Recommendation</h2>
-                            <div className="flex items-center mt-2">
+                            <div className="flex items-center mt-2 flex-wrap gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className={cn("p-2 rounded-full bg-opacity-10", ringColor.replace("text-", "bg-"), ringColor)}>
                                         {icon}
@@ -65,9 +90,9 @@ export default function DashboardPage() {
                                     <span className={cn("text-2xl md:text-3xl font-bold", ringColor)}>{assessment.recText}</span>
                                 </div>
 
-                                <div className="h-8 w-px bg-border mx-4 hidden sm:block"></div>
+                                <div className="h-8 w-px bg-border hidden sm:block"></div>
 
-                                <div className="hidden sm:block">
+                                <div>
                                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vote</h3>
                                     <span className={cn(
                                         "text-xl font-bold uppercase tracking-tight",
@@ -84,12 +109,29 @@ export default function DashboardPage() {
                         <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md">{latestDate}</span>
                     </div>
 
-                    <p className="text-lg font-medium text-foreground leading-relaxed mb-4">
-                        {assessment.plan}
-                    </p>
-                    <div className="pt-4 border-t border-border flex gap-2">
-                        <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider">Why?</span>
-                        <span className="text-sm text-muted-foreground">{assessment.why}</span>
+                    <div className="space-y-4 mb-6">
+                        <ul className="space-y-2">
+                            {assessment.plan.map((p, i) => (
+                                <li key={i} className="flex gap-2 text-foreground font-medium text-lg leading-snug">
+                                    <span className="text-primary mt-1.5">•</span>
+                                    <span>{p}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="pt-4 border-t border-border">
+                        <div className="flex gap-2 items-start">
+                            <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Why?</span>
+                            <ul className="space-y-1">
+                                {assessment.why.map((w, i) => (
+                                    <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                                        <span className="text-muted-foreground/50">•</span>
+                                        <span>{w}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -118,6 +160,71 @@ export default function DashboardPage() {
                             {assessment.oddOneOut ? assessment.oddWhy : "Devices are mostly consistent today."}
                         </p>
                     </div>
+                </div>
+            </div>
+
+            {/* Trends Graph */}
+            <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-bold text-foreground">Recovery Trends ({settings.baselineDays}d Window)</h2>
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-primary"></div>
+                            <span className="text-xs text-muted-foreground font-medium">Confidence</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <span className="text-xs text-muted-foreground font-medium">Regulation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-[280px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                            <XAxis
+                                dataKey="date"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            />
+                            <YAxis
+                                domain={[0, 100]}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                ticks={[0, 25, 50, 75, 100]}
+                            />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="confidence"
+                                stroke="#2563eb"
+                                strokeWidth={3}
+                                dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                                activeDot={{ r: 6 }}
+                                name="Confidence"
+                            />
+                            <Line
+                                type="stepAfter"
+                                dataKey="regulation"
+                                stroke="#10b981"
+                                strokeWidth={2}
+                                strokeDasharray="5 5"
+                                dot={false}
+                                name="Regulation Status"
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="mt-4 flex justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                    <span>Stressed (0)</span>
+                    <span>Neutral (50)</span>
+                    <span>Regulated (100)</span>
                 </div>
             </div>
 
