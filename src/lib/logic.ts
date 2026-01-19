@@ -466,13 +466,31 @@ export function computeDayAssessment(
         const ouraHrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
         if (ouraHrvs.length >= 2) {
             const avgOura = ouraHrvs.reduce((a, b) => a + b, 0) / ouraHrvs.length;
-            if (base.ouraHrv?.mean && avgOura < base.ouraHrv.mean * 0.85) {
+            if (base.ouraHrv?.mean && avgOura < base.ouraHrv.mean * 0.9) {
                 score += 1;
             }
         }
 
         return score;
     };
+
+    // --- Oura HRV Trend Categorization ---
+    const getOuraHrvStatus = (targetDate: string, allEntries: DailyEntry[]): "Optimal" | "Good" | "Pay Attention" | "Unknown" => {
+        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = sorted.findIndex(e => e.date === targetDate);
+        if (idx === -1 || !base.ouraHrv?.mean) return "Unknown";
+
+        const window = sorted.slice(Math.max(0, idx - 2), idx + 1);
+        const hrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
+        if (hrvs.length === 0) return "Unknown";
+
+        const avg = hrvs.reduce((a, b) => a + b, 0) / hrvs.length;
+        if (avg >= base.ouraHrv.mean) return "Optimal";
+        if (avg >= base.ouraHrv.mean * 0.9) return "Good";
+        return "Pay Attention";
+    };
+
+    const ouraHrvStatus = getOuraHrvStatus(entry.date, entries);
 
     const currentScore = getCrashScore(entry.date, entries);
 
@@ -502,7 +520,7 @@ export function computeDayAssessment(
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, loadHeatArray, cycleLabel
+        crashStatus, loadMemory, loadHeatArray, ouraHrvStatus, cycleLabel
     };
 }
 
@@ -536,7 +554,7 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
-    lines.push(`Fragility=${assess.fragilityType.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} CrashStatus=${assess.crashStatus.toUpperCase()} LoadMem=${assess.loadMemory.toFixed(2)}`);
+    lines.push(`Fragility=${assess.fragilityType.toUpperCase()} SignalTension=${assess.signalTension ? "YES" : "NO"} CrashStatus=${assess.crashStatus.toUpperCase()} OuraHRV=${assess.ouraHrvStatus.toUpperCase()} LoadMem=${assess.loadMemory.toFixed(2)}`);
     lines.push(`Mantra="${assess.mantra}"`);
     lines.push(`Recommendation=${assess.recText}`);
     lines.push("Plan:");

@@ -221,8 +221,13 @@ export default function DashboardPage() {
                                             <span className="text-[10px] text-muted-foreground font-medium uppercase">Recovery Suppression</span>
                                         </div>
                                         <div className="flex items-center gap-1.5">
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", (latest.ouraHrv || 0) < (latest.mHrv || 0) * 0.7 ? "bg-red-500" : "bg-emerald-500")} />
-                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Nightly Parasympathetic Lag</span>
+                                            <div className={cn(
+                                                "w-1.5 h-1.5 rounded-full",
+                                                assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
+                                                    assessment.ouraHrvStatus === "Good" ? "bg-amber-500" :
+                                                        assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
+                                            )} />
+                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Oura HRV: {assessment.ouraHrvStatus}</span>
                                         </div>
                                     </div>
                                     <div className="text-right">
