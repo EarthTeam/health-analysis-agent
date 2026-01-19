@@ -171,6 +171,28 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
+                    {/* Signal Tension Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Signal Tension</h3>
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-3 w-3 rounded-full",
+                                assessment.signalTension ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-emerald-500"
+                            )}></div>
+                            <span className={cn(
+                                "text-2xl font-bold uppercase tracking-tight",
+                                assessment.signalTension ? "text-amber-500" : "text-emerald-500"
+                            )}>
+                                {assessment.signalTension ? "YES" : "NO"}
+                            </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                            {assessment.signalTension
+                                ? "Morpheus engine is hot, but Oura/Whoop battery is lagging. High capacity vs low consolidation."
+                                : "Signals are harmonized. No significant capacity vs consolidation gap."}
+                        </p>
+                    </div>
+
                     {/* Confidence Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confidence Score</h3>

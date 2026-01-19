@@ -46,6 +46,7 @@ export interface DayAssessment {
     plan: string[];
     insight?: string;
     fragility: "Low" | "Moderate" | "High";
+    signalTension: boolean;
     cycleLabel?: string;
 }
 
