@@ -158,8 +158,9 @@ export function EntryWizard() {
                                 >
                                     <option value="">Select Status (Calculated if empty)</option>
                                     <option value="Optimal">Optimal (Matches/Beats Baseline)</option>
-                                    <option value="Good">Good (Slightly different, but stable)</option>
-                                    <option value="Pay Attention">Pay Attention (Below average/Stress)</option>
+                                    <option value="Good">Good (Stable/Decent)</option>
+                                    <option value="Fair">Fair (Below average/Mild Stress)</option>
+                                    <option value="Pay Attention">Pay Attention (Significantly below/High Stress)</option>
                                 </select>
                             </div>
                         </div>

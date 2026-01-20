@@ -244,8 +244,9 @@ export default function DashboardPage() {
                                             <div className={cn(
                                                 "w-1.5 h-1.5 rounded-full",
                                                 assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
-                                                    assessment.ouraHrvStatus === "Good" ? "bg-amber-500" :
-                                                        assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
+                                                    assessment.ouraHrvStatus === "Good" ? "bg-emerald-400" :
+                                                        assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
+                                                            assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
                                             )} />
                                             <span className="text-[10px] text-muted-foreground font-medium uppercase">Oura HRV: {assessment.ouraHrvStatus}</span>
                                         </div>

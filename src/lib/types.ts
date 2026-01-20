@@ -9,7 +9,7 @@ export interface DailyEntry {
     ouraRec: number | null;
     ouraRhr: number | null;
     ouraHrv: number | null;
-    ouraHrvStatus?: "Optimal" | "Good" | "Pay Attention";
+    ouraHrvStatus?: "Optimal" | "Good" | "Fair" | "Pay Attention";
 
     // Whoop
     whoopRec: number | null;
@@ -55,7 +55,7 @@ export interface DayAssessment {
     crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
     loadMemory: number;
     loadHeatArray: number[];
-    ouraHrvStatus: "Optimal" | "Good" | "Pay Attention" | "Unknown";
+    ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";
     cycleLabel?: string;
 }
 

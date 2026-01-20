@@ -463,23 +463,27 @@ export function computeDayAssessment(
         if (painActive) score += 1;
 
         // 7. Oura HRV Suppression (Phase 2 - Slow Signal)
-        const hasManualPayAttention = window.some(e => e.ouraHrvStatus === "Pay Attention");
+        const hasManualSuppression = window.some(e => e.ouraHrvStatus === "Pay Attention" || e.ouraHrvStatus === "Fair");
         const ouraHrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
 
-        let suppressed = hasManualPayAttention;
-        if (!suppressed && ouraHrvs.length >= 2) {
+        let suppressedScale = 0;
+        if (window.some(e => e.ouraHrvStatus === "Pay Attention")) suppressedScale = 1.0;
+        else if (window.some(e => e.ouraHrvStatus === "Fair")) suppressedScale = 0.5;
+
+        if (ouraHrvs.length >= 2) {
             const avgOura = ouraHrvs.reduce((a, b) => a + b, 0) / ouraHrvs.length;
-            if (base.ouraHrv?.mean && avgOura < base.ouraHrv.mean * 0.9) {
-                suppressed = true;
+            if (base.ouraHrv?.mean) {
+                if (avgOura < base.ouraHrv.mean * 0.85) suppressedScale = Math.max(suppressedScale, 1.0);
+                else if (avgOura < base.ouraHrv.mean * 0.95) suppressedScale = Math.max(suppressedScale, 0.5);
             }
         }
-        if (suppressed) score += 1;
+        score += suppressedScale;
 
         return score;
     };
 
     // --- Oura HRV Trend Categorization ---
-    const getOuraHrvStatus = (targetDate: string, currentEntry: DailyEntry, allEntries: DailyEntry[]): "Optimal" | "Good" | "Pay Attention" | "Unknown" => {
+    const getOuraHrvStatus = (targetDate: string, currentEntry: DailyEntry, allEntries: DailyEntry[]): "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown" => {
         // Manual override from Entry Wizard
         if (currentEntry.ouraHrvStatus) return currentEntry.ouraHrvStatus;
 
@@ -493,7 +497,8 @@ export function computeDayAssessment(
 
         const avg = hrvs.reduce((a, b) => a + b, 0) / hrvs.length;
         if (avg >= base.ouraHrv.mean) return "Optimal";
-        if (avg >= base.ouraHrv.mean * 0.9) return "Good";
+        if (avg >= base.ouraHrv.mean * 0.95) return "Good";
+        if (avg >= base.ouraHrv.mean * 0.85) return "Fair";
         return "Pay Attention";
     };
 
