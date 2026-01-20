@@ -9,6 +9,7 @@ export interface DailyEntry {
     ouraRec: number | null;
     ouraRhr: number | null;
     ouraHrv: number | null;
+    ouraHrvStatus?: "Optimal" | "Good" | "Pay Attention";
 
     // Whoop
     whoopRec: number | null;

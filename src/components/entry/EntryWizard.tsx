@@ -71,6 +71,7 @@ export function EntryWizard() {
             ouraRec: formData.ouraRec ?? null,
             ouraRhr: formData.ouraRhr ?? null,
             ouraHrv: formData.ouraHrv ?? null,
+            ouraHrvStatus: formData.ouraHrvStatus,
             whoopRec: formData.whoopRec ?? null,
             whoopRhr: formData.whoopRhr ?? null,
             whoopHrv: formData.whoopHrv ?? null,
@@ -147,6 +148,19 @@ export function EntryWizard() {
                                     onChange={(e) => updateField("ouraHrv", e.target.value === "" ? null : Number(e.target.value))}
                                     placeholder="e.g. 65"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Oura HRV Status (Trend)</label>
+                                <select
+                                    className="w-full p-3 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 outline-none bg-background text-lg"
+                                    value={formData.ouraHrvStatus ?? ""}
+                                    onChange={(e) => updateField("ouraHrvStatus", e.target.value === "" ? undefined : e.target.value)}
+                                >
+                                    <option value="">Select Status (Calculated if empty)</option>
+                                    <option value="Optimal">Optimal (Matches/Beats Baseline)</option>
+                                    <option value="Good">Good (Slightly different, but stable)</option>
+                                    <option value="Pay Attention">Pay Attention (Below average/Stress)</option>
+                                </select>
                             </div>
                         </div>
                     </div>

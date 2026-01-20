@@ -463,19 +463,26 @@ export function computeDayAssessment(
         if (painActive) score += 1;
 
         // 7. Oura HRV Suppression (Phase 2 - Slow Signal)
+        const hasManualPayAttention = window.some(e => e.ouraHrvStatus === "Pay Attention");
         const ouraHrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
-        if (ouraHrvs.length >= 2) {
+
+        let suppressed = hasManualPayAttention;
+        if (!suppressed && ouraHrvs.length >= 2) {
             const avgOura = ouraHrvs.reduce((a, b) => a + b, 0) / ouraHrvs.length;
             if (base.ouraHrv?.mean && avgOura < base.ouraHrv.mean * 0.9) {
-                score += 1;
+                suppressed = true;
             }
         }
+        if (suppressed) score += 1;
 
         return score;
     };
 
     // --- Oura HRV Trend Categorization ---
-    const getOuraHrvStatus = (targetDate: string, allEntries: DailyEntry[]): "Optimal" | "Good" | "Pay Attention" | "Unknown" => {
+    const getOuraHrvStatus = (targetDate: string, currentEntry: DailyEntry, allEntries: DailyEntry[]): "Optimal" | "Good" | "Pay Attention" | "Unknown" => {
+        // Manual override from Entry Wizard
+        if (currentEntry.ouraHrvStatus) return currentEntry.ouraHrvStatus;
+
         const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === targetDate);
         if (idx === -1 || !base.ouraHrv?.mean) return "Unknown";
@@ -490,7 +497,7 @@ export function computeDayAssessment(
         return "Pay Attention";
     };
 
-    const ouraHrvStatus = getOuraHrvStatus(entry.date, entries);
+    const ouraHrvStatus = getOuraHrvStatus(entry.date, entry, entries);
 
     const currentScore = getCrashScore(entry.date, entries);
 
