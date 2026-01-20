@@ -345,55 +345,79 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-end gap-4 mb-4">
-                            <div className="flex-shrink-0">
-                                <div className="flex items-end gap-1">
-                                    <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
-                                    <div className="flex flex-col mb-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none">Heat</span>
-                                        <span className="text-[10px] text-muted-foreground/50">/ 1.50 MAX</span>
-                                    </div>
+                        <div className="flex gap-10 mb-6">
+                            {/* Vertical Total Load Gauge */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex flex-col justify-between h-32 text-[9px] font-bold text-muted-foreground/50 py-1 uppercase tabular-nums">
+                                    <span>1.5</span>
+                                    <span>1.0</span>
+                                    <span>0.5</span>
+                                    <span>0.0</span>
+                                </div>
+                                <div className="h-32 w-4 bg-secondary/30 rounded-full relative overflow-hidden border border-border/50 group">
+                                    <div
+                                        className={cn(
+                                            "absolute bottom-0 left-0 w-full transition-all duration-700 rounded-b-full",
+                                            assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]" :
+                                                assessment.loadStatus === "WARM" || assessment.loadMemory > 0.5 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" : "bg-emerald-500"
+                                        )}
+                                        style={{ height: `${Math.min((assessment.loadMemory / 1.5) * 100, 100)}%` }}
+                                    />
+                                    {/* Markers */}
+                                    <div className="absolute top-1/3 left-0 w-full h-[0.5px] bg-background/30" />
+                                    <div className="absolute top-2/3 left-0 w-full h-[0.5px] bg-background/30" />
+
+                                    {/* Highlight effect */}
+                                    <div className="absolute top-0 left-1 w-1 h-full bg-white/10 rounded-full pointer-events-none" />
                                 </div>
                             </div>
 
-                            {/* Decay Visualization with Weight Labels */}
-                            <div className="flex-1 flex gap-1.5 h-16 items-end mb-1">
-                                {assessment.loadHeatArray.map((h, i) => {
-                                    const labels = ["0.25", "0.50", "1.00"];
-                                    const weights = [0.25, 0.5, 1.0];
-                                    return (
-                                        <div key={i} className="flex-1 flex flex-col items-center">
-                                            <span className={cn(
-                                                "text-[8px] font-bold mb-1",
-                                                h > 0 ? "text-foreground" : "text-muted-foreground/30"
-                                            )}>
-                                                {h > 0 ? `+${h.toFixed(2)}` : ""}
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="flex flex-col">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
+                                                {assessment.loadMemory.toFixed(2)}
                                             </span>
-                                            <div
-                                                className={cn(
-                                                    "w-full rounded-t-sm transition-all duration-500",
-                                                    h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
-                                                )}
-                                                style={{ height: `${(weights[i] / 1.0) * 100}%`, opacity: h > 0 ? 1 : 0.2, minHeight: '2px' }}
-                                            />
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Heat</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                        <div className="text-[9px] text-muted-foreground/60 font-medium ml-1 mt-1 uppercase tracking-wider">Cumulative Intensity (48h)</div>
+                                    </div>
+                                    <div className="bg-secondary/20 rounded-xl px-3 py-2 border border-border/50">
+                                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Threshold</div>
+                                        <div className="text-xs font-bold text-foreground/80 tabular-nums">{assessment.loadThreshold.toLocaleString()}</div>
+                                    </div>
+                                </div>
 
-                        <div className="flex justify-between text-[9px] font-bold text-muted-foreground uppercase tracking-wider mt-1 mb-6 px-1">
-                            <div className="flex flex-col items-center">
-                                <span>-48h</span>
-                                <span className="text-[7px] font-medium opacity-50">Residue</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <span>-24h</span>
-                                <span className="text-[7px] font-medium opacity-50">Lag</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <span>Today</span>
-                                <span className="text-[7px] font-medium opacity-50">Load</span>
+                                {/* Decay Visualization */}
+                                <div className="flex gap-2 h-16 items-end mt-4">
+                                    {assessment.loadHeatArray.map((h, i) => {
+                                        const labels = ["-48h", "-24h", "Today"];
+                                        const subLabels = ["Residue", "Lag", "Today"];
+                                        const weights = [0.25, 0.5, 1.0];
+                                        return (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                                                <div className="w-full relative h-10 flex items-end">
+                                                    <div
+                                                        className={cn(
+                                                            "w-full rounded-t-sm transition-all duration-500",
+                                                            h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
+                                                        )}
+                                                        style={{
+                                                            height: `${(weights[i] / 1.0) * 100}%`,
+                                                            opacity: h > 0 ? 1 : 0.15,
+                                                            boxShadow: h > 0 ? '0 -2px 8px -2px rgba(0,0,0,0.1)' : 'none'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col items-center leading-none">
+                                                    <span className="text-[9px] font-bold text-muted-foreground">{labels[i]}</span>
+                                                    <span className="text-[7px] font-bold text-muted-foreground/40 uppercase tracking-tighter">{subLabels[i]}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
 

@@ -357,7 +357,7 @@ export function computeDayAssessment(
     const calculateLoadMemory = () => {
         const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === entry.date);
-        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const };
+        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const, threshold: 0 };
 
         const stepThreshold = Math.max(9500, (base.steps?.mean || 0) * 1.2);
         const d0 = (sorted[idx].steps || 0) >= stepThreshold ? 1.0 : 0;
@@ -370,10 +370,10 @@ export function computeDayAssessment(
         else if (total >= 0.75) status = "HOT";
         else if (total > 0) status = "WARM";
 
-        return { total, array: [d2, d1, d0], status };
+        return { total, array: [d2, d1, d0], status, threshold: stepThreshold };
     };
 
-    const { total: loadMemory, array: loadHeatArray, status: loadStatus } = calculateLoadMemory();
+    const { total: loadMemory, array: loadHeatArray, status: loadStatus, threshold: loadThreshold } = calculateLoadMemory();
 
     // --- Crash Score ---
     const getCrashScore = (targetDate: string) => {
@@ -444,6 +444,7 @@ export function computeDayAssessment(
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
         crashStatus, loadMemory, loadHeatArray, loadStatus, intensityReady,
+        loadThreshold,
         ouraHrvStatus: getOuraHrvStatus(), cycleLabel
     };
 }

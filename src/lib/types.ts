@@ -57,6 +57,7 @@ export interface DayAssessment {
     loadHeatArray: number[];
     loadStatus: "COOL" | "WARM" | "HOT" | "PEAK";
     intensityReady: boolean;
+    loadThreshold: number;
     ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";
     cycleLabel?: string;
 }
