@@ -95,88 +95,241 @@ export default function DashboardPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Recommendation Card */}
-                <div className="col-span-1 md:col-span-2 bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
-                    <div className={cn("absolute top-0 left-0 w-1 h-full", ringBg)}></div>
-                    <div className="flex items-start justify-between mb-6">
-                        <div className="flex-1">
-                            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Strategy</h2>
+                {/* Main Content Area */}
+                <div className="col-span-1 md:col-span-2 space-y-6">
+                    {/* Recommendation Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
+                        <div className={cn("absolute top-0 left-0 w-1 h-full", ringBg)}></div>
+                        <div className="flex items-start justify-between mb-6">
+                            <div className="flex-1">
+                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Strategy</h2>
 
-                            {/* Daily Mantra */}
-                            <div className="mt-3 mb-6">
-                                <p className="text-xl md:text-2xl font-bold text-foreground leading-tight tracking-tight">
-                                    {assessment.mantra}
-                                </p>
-                            </div>
-
-                            <div className="flex items-center mt-2 flex-wrap gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn("p-2 rounded-full bg-opacity-10", ringColor.replace("text-", "bg-"), ringColor)}>
-                                        {icon}
-                                    </div>
-                                    <span className={cn("text-2xl md:text-3xl font-bold", ringColor)}>{assessment.recText}</span>
+                                {/* Daily Mantra */}
+                                <div className="mt-3 mb-6">
+                                    <p className="text-xl md:text-2xl font-bold text-foreground leading-tight tracking-tight">
+                                        {assessment.mantra}
+                                    </p>
                                 </div>
 
+                                <div className="flex items-center mt-2 flex-wrap gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn("p-2 rounded-full bg-opacity-10", ringColor.replace("text-", "bg-"), ringColor)}>
+                                            {icon}
+                                        </div>
+                                        <span className={cn("text-2xl md:text-3xl font-bold", ringColor)}>{assessment.recText}</span>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <button
-                        onClick={() => setIsCalendarOpen(true)}
-                        className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md hover:bg-secondary/80 transition-colors"
-                    >
-                        <Calendar className="w-3 h-3" />
-                        {latestDate}
-                    </button>
+                        <button
+                            onClick={() => setIsCalendarOpen(true)}
+                            className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md hover:bg-secondary/80 transition-colors"
+                        >
+                            <Calendar className="w-3 h-3" />
+                            {latestDate}
+                        </button>
 
-                    {/* Morning Scout Check */}
-                    <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border flex gap-3 items-center">
-                        <div className="p-2 bg-background rounded-lg shadow-sm">
-                            <Activity className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Morning Scout Check</h4>
-                            <p className="text-sm font-semibold text-foreground">
-                                {assessment.scoutCheck}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 mb-6">
-                        <ul className="space-y-2">
-                            {assessment.plan.map((p, i) => (
-                                <li key={i} className="flex gap-2 text-foreground font-medium text-lg leading-snug">
-                                    <span className="text-primary mt-1.5">•</span>
-                                    <span>{p}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {assessment.insight && (
-                        <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl flex gap-3 items-start">
-                            <div className="mt-1">
-                                <div className="w-2 h-2 rounded-full bg-primary" />
+                        {/* Morning Scout Check */}
+                        <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border flex gap-3 items-center mt-6">
+                            <div className="p-2 bg-background rounded-lg shadow-sm">
+                                <Activity className="w-5 h-5 text-primary" />
                             </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Physiological Principle</h4>
-                                <p className="text-sm text-foreground font-medium leading-relaxed italic">
-                                    &ldquo;{assessment.insight}&rdquo;
+                            <div className="flex-1">
+                                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Morning Scout Check</h4>
+                                <p className="text-sm font-semibold text-foreground">
+                                    {assessment.scoutCheck}
                                 </p>
                             </div>
                         </div>
-                    )}
 
-                    <div className="pt-4 border-t border-border">
-                        <div className="flex gap-2 items-start">
-                            <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Why?</span>
-                            <ul className="space-y-1">
-                                {assessment.why.map((w, i) => (
-                                    <li key={i} className="text-sm text-muted-foreground flex gap-2">
-                                        <span className="text-muted-foreground/50">•</span>
-                                        <span>{w}</span>
+                        <div className="space-y-4 mb-6">
+                            <ul className="space-y-2">
+                                {assessment.plan.map((p, i) => (
+                                    <li key={i} className="flex gap-2 text-foreground font-medium text-lg leading-snug">
+                                        <span className="text-primary mt-1.5">•</span>
+                                        <span>{p}</span>
                                     </li>
                                 ))}
                             </ul>
+                        </div>
+
+                        {assessment.insight && (
+                            <div className="mb-6 p-4 bg-primary/5 border border-primary/10 rounded-xl flex gap-3 items-start">
+                                <div className="mt-1">
+                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Physiological Principle</h4>
+                                    <p className="text-sm text-foreground font-medium leading-relaxed italic">
+                                        &ldquo;{assessment.insight}&rdquo;
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="pt-4 border-t border-border">
+                            <div className="flex gap-2 items-start">
+                                <span className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Why?</span>
+                                <ul className="space-y-1">
+                                    {assessment.why.map((w, i) => (
+                                        <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                                            <span className="text-muted-foreground/50">•</span>
+                                            <span>{w}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Secondary Metrics Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Load Memory Card */}
+                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Load Memory (48h)</h3>
+                                <div className="flex items-center gap-2">
+                                    {assessment.intensityReady && (
+                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">
+                                            <Activity className="w-3 h-3" />
+                                            CEILING RAISED
+                                        </span>
+                                    )}
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                        assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-100 text-red-700" :
+                                            assessment.loadStatus === "WARM" ? "bg-amber-100 text-amber-700" :
+                                                "bg-emerald-100 text-emerald-700"
+                                    )}>
+                                        {assessment.loadStatus}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-10 mb-6">
+                                {/* Vertical Total Load Gauge */}
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-col justify-between h-32 text-[9px] font-bold text-muted-foreground/50 py-1 uppercase tabular-nums">
+                                        <span>1.5</span>
+                                        <span>1.0</span>
+                                        <span>0.5</span>
+                                        <span>0.0</span>
+                                    </div>
+                                    <div className="h-32 w-4 bg-secondary/30 rounded-full relative overflow-hidden border border-border/50 group">
+                                        <div
+                                            className={cn(
+                                                "absolute bottom-0 left-0 w-full transition-all duration-700 rounded-b-full",
+                                                assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]" :
+                                                    assessment.loadStatus === "WARM" || assessment.loadMemory > 0.5 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" : "bg-emerald-500"
+                                            )}
+                                            style={{ height: `${Math.min((assessment.loadMemory / 1.5) * 100, 100)}%` }}
+                                        />
+                                        {/* Markers */}
+                                        <div className="absolute top-1/3 left-0 w-full h-[0.5px] bg-background/30" />
+                                        <div className="absolute top-2/3 left-0 w-full h-[0.5px] bg-background/30" />
+
+                                        {/* Highlight effect */}
+                                        <div className="absolute top-0 left-1 w-1 h-full bg-white/10 rounded-full pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="flex flex-col">
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
+                                                    {assessment.loadMemory.toFixed(2)}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Heat</span>
+                                            </div>
+                                            <div className="text-[9px] text-muted-foreground/60 font-medium ml-1 mt-1 uppercase tracking-wider">Cumulative Intensity (48h)</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Decay Visualization */}
+                                    <div className="flex gap-2 h-16 items-end mt-4">
+                                        {assessment.loadHeatArray.map((h, i) => {
+                                            const labels = ["-48h", "-24h", "Today"];
+                                            const subLabels = ["Residue", "Lag", "Today"];
+                                            const weights = [0.25, 0.5, 1.0];
+                                            return (
+                                                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                                                    <div className="w-full relative h-10 flex items-end">
+                                                        <div
+                                                            className={cn(
+                                                                "w-full rounded-t-sm transition-all duration-500",
+                                                                h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
+                                                            )}
+                                                            style={{
+                                                                height: `${(weights[i] / 1.0) * 100}%`,
+                                                                opacity: h > 0 ? 1 : 0.15,
+                                                                boxShadow: h > 0 ? '0 -2px 8px -2px rgba(0,0,0,0.1)' : 'none'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col items-center leading-none">
+                                                        <span className="text-[9px] font-bold text-muted-foreground">{labels[i]}</span>
+                                                        <span className="text-[7px] font-bold text-muted-foreground/40 uppercase tracking-tighter">{subLabels[i]}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-3 border-t border-border">
+                                <p className="text-sm font-bold text-foreground mb-1">
+                                    {assessment.loadStatus === "COOL" ? "The Floor is Stable" :
+                                        assessment.loadStatus === "WARM" ? "Clearing Residual Load" :
+                                            "System is Processing Peak Load"}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                                    {assessment.intensityReady
+                                        ? "Previous loads have cooled. Safe to test higher Morpheus intensity zones if symptoms remain quiet."
+                                        : assessment.loadStatus === "COOL"
+                                            ? "System is processed, but other signals suggest caution. Stay in your current ceiling."
+                                            : "Recent volume is still being absorbed. Keep heart rate zones conservative to avoid stacking lag."}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Fragility Card */}
+                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Fragility Profile</h3>
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "h-3 w-3 rounded-full",
+                                        assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
+                                            assessment.fragilityType === "Consolidation" ? "bg-orange-500" :
+                                                assessment.fragilityType === "Recovering" ? "bg-blue-500" : "bg-emerald-500"
+                                    )}></div>
+                                    <span className={cn(
+                                        "text-2xl font-bold uppercase tracking-tight",
+                                        assessment.fragilityType === "Global" ? "text-red-500" :
+                                            assessment.fragilityType === "Consolidation" ? "text-orange-500" :
+                                                assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
+                                    )}>
+                                        {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                    {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
+                                        assessment.fragilityType === "Consolidation" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
+                                            assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
+                                                "System is harmonized. Safe to build durability."}
+                                </p>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-border/50">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Heat Limit</span>
+                                    <span className="text-xs font-mono font-bold text-foreground/80">{assessment.loadThreshold.toLocaleString()} steps</span>
+                                </div>
+                                <div className="text-[9px] text-muted-foreground italic">Personalized based on 1.2x baseline mean</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -323,146 +476,6 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
-                    {/* Load Memory Card */}
-                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Load Memory (48h)</h3>
-                            <div className="flex items-center gap-2">
-                                {assessment.intensityReady && (
-                                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">
-                                        <Activity className="w-3 h-3" />
-                                        CEILING RAISED
-                                    </span>
-                                )}
-                                <span className={cn(
-                                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                    assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-100 text-red-700" :
-                                        assessment.loadStatus === "WARM" ? "bg-amber-100 text-amber-700" :
-                                            "bg-emerald-100 text-emerald-700"
-                                )}>
-                                    {assessment.loadStatus}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-10 mb-6">
-                            {/* Vertical Total Load Gauge */}
-                            <div className="flex items-center gap-3">
-                                <div className="flex flex-col justify-between h-32 text-[9px] font-bold text-muted-foreground/50 py-1 uppercase tabular-nums">
-                                    <span>1.5</span>
-                                    <span>1.0</span>
-                                    <span>0.5</span>
-                                    <span>0.0</span>
-                                </div>
-                                <div className="h-32 w-4 bg-secondary/30 rounded-full relative overflow-hidden border border-border/50 group">
-                                    <div
-                                        className={cn(
-                                            "absolute bottom-0 left-0 w-full transition-all duration-700 rounded-b-full",
-                                            assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]" :
-                                                assessment.loadStatus === "WARM" || assessment.loadMemory > 0.5 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" : "bg-emerald-500"
-                                        )}
-                                        style={{ height: `${Math.min((assessment.loadMemory / 1.5) * 100, 100)}%` }}
-                                    />
-                                    {/* Markers */}
-                                    <div className="absolute top-1/3 left-0 w-full h-[0.5px] bg-background/30" />
-                                    <div className="absolute top-2/3 left-0 w-full h-[0.5px] bg-background/30" />
-
-                                    {/* Highlight effect */}
-                                    <div className="absolute top-0 left-1 w-1 h-full bg-white/10 rounded-full pointer-events-none" />
-                                </div>
-                            </div>
-
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="flex flex-col">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
-                                                {assessment.loadMemory.toFixed(2)}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Heat</span>
-                                        </div>
-                                        <div className="text-[9px] text-muted-foreground/60 font-medium ml-1 mt-1 uppercase tracking-wider">Cumulative Intensity (48h)</div>
-                                    </div>
-                                    <div className="bg-secondary/20 rounded-xl px-3 py-2 border border-border/50">
-                                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Threshold</div>
-                                        <div className="text-xs font-bold text-foreground/80 tabular-nums">{assessment.loadThreshold.toLocaleString()}</div>
-                                    </div>
-                                </div>
-
-                                {/* Decay Visualization */}
-                                <div className="flex gap-2 h-16 items-end mt-4">
-                                    {assessment.loadHeatArray.map((h, i) => {
-                                        const labels = ["-48h", "-24h", "Today"];
-                                        const subLabels = ["Residue", "Lag", "Today"];
-                                        const weights = [0.25, 0.5, 1.0];
-                                        return (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                                <div className="w-full relative h-10 flex items-end">
-                                                    <div
-                                                        className={cn(
-                                                            "w-full rounded-t-sm transition-all duration-500",
-                                                            h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
-                                                        )}
-                                                        style={{
-                                                            height: `${(weights[i] / 1.0) * 100}%`,
-                                                            opacity: h > 0 ? 1 : 0.15,
-                                                            boxShadow: h > 0 ? '0 -2px 8px -2px rgba(0,0,0,0.1)' : 'none'
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col items-center leading-none">
-                                                    <span className="text-[9px] font-bold text-muted-foreground">{labels[i]}</span>
-                                                    <span className="text-[7px] font-bold text-muted-foreground/40 uppercase tracking-tighter">{subLabels[i]}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-3 border-t border-border">
-                            <p className="text-sm font-bold text-foreground mb-1">
-                                {assessment.loadStatus === "COOL" ? "The Floor is Stable" :
-                                    assessment.loadStatus === "WARM" ? "Clearing Residual Load" :
-                                        "System is Processing Peak Load"}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                {assessment.intensityReady
-                                    ? "Previous loads have cooled. Safe to test higher Morpheus intensity zones if symptoms remain quiet."
-                                    : assessment.loadStatus === "COOL"
-                                        ? "System is processed, but other signals suggest caution. Stay in your current ceiling."
-                                        : "Recent volume is still being absorbed. Keep heart rate zones conservative to avoid stacking lag."}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Fragility Card */}
-                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Fragility Profile</h3>
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "h-3 w-3 rounded-full",
-                                assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
-                                    assessment.fragilityType === "Consolidation" ? "bg-orange-500" :
-                                        assessment.fragilityType === "Recovering" ? "bg-blue-500" : "bg-emerald-500"
-                            )}></div>
-                            <span className={cn(
-                                "text-2xl font-bold uppercase tracking-tight",
-                                assessment.fragilityType === "Global" ? "text-red-500" :
-                                    assessment.fragilityType === "Consolidation" ? "text-orange-500" :
-                                        assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
-                            )}>
-                                {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
-                            </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                            {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
-                                assessment.fragilityType === "Consolidation" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
-                                    assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
-                                        "System is harmonized. Safe to build durability."}
-                        </p>
-                    </div>
 
                     {/* Signal Tension Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
