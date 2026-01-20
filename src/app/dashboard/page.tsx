@@ -265,32 +265,51 @@ export default function DashboardPage() {
                                 <div className={cn("h-full flex-1 transition-all", assessment.crashStatus === "Crash-State" ? "bg-red-700" : "bg-secondary")} />
                             </div>
 
-                            {/* Lag Seismograph */}
-                            <div className="pt-3 border-t border-border mt-2">
-                                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Lag Seismograph (Oura/Whoop)</h4>
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
-                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Recovery Suppression</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <div className={cn(
-                                                "w-1.5 h-1.5 rounded-full",
-                                                assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
-                                                    assessment.ouraHrvStatus === "Good" ? "bg-emerald-400" :
-                                                        assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
-                                                            assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
-                                            )} />
-                                            <span className="text-[10px] text-muted-foreground font-medium uppercase">Oura HRV: {assessment.ouraHrvStatus}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">24-48h SENSITIVE</span>
-                                    </div>
+                        </div>
+                    </div>
+
+                    {/* Lag Seismograph Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lag Seismograph</h3>
+                            <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">24-48h SENSITIVE</span>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
+                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recovery Suppression</span>
                                 </div>
+                                <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
+                                            assessment.ouraHrvStatus === "Good" ? "bg-emerald-400" :
+                                                assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
+                                                    assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
+                                    )} />
+                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Oura HRV Trend</span>
+                                </div>
+                                <span className={cn(
+                                    "text-xs font-bold px-2 py-0.5 rounded-lg",
+                                    assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500/10 text-emerald-600" :
+                                        assessment.ouraHrvStatus === "Good" ? "bg-emerald-400/10 text-emerald-600" :
+                                            assessment.ouraHrvStatus === "Fair" ? "bg-amber-500/10 text-amber-600" :
+                                                "bg-red-500/10 text-red-600"
+                                )}>
+                                    {assessment.ouraHrvStatus}
+                                </span>
                             </div>
                         </div>
+
+                        <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
+                            Detects autonomic tremors and recharge deficits that lag behind 24-48h of load.
+                        </p>
                     </div>
 
                     {/* Load Memory Card */}
