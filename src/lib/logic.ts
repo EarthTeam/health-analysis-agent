@@ -62,11 +62,7 @@ export function computeBaselines(
 ): Record<keyof DailyEntry, BaselineStats> {
     const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
     const idx = sorted.findIndex((e) => e.date === todayDate);
-    // If today is not found, use all entries (assuming today is new). 
-    // But legacy logic says: (idx===-1?sorted:sorted.slice(0,idx)) which implies looking at PRIOR days.
-    // If today is in the list, we look at days BEFORE today.
     const prior = idx === -1 ? sorted : sorted.slice(0, idx);
-
     const window = prior.slice(Math.max(0, prior.length - baselineDays));
 
     const fields: (keyof DailyEntry)[] = [
@@ -75,7 +71,6 @@ export function computeBaselines(
 
     const base: any = {};
     for (const f of fields) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const xs = window.map((e) => (e as any)[f] as number | null);
         base[f] = { mean: mean(xs), sd: sd(xs), n: xs.filter((x) => x != null).length };
     }
@@ -97,10 +92,8 @@ function outlierFlags(
     t: ReturnType<typeof getThresholds>
 ): OutlierFlag[] {
     const flags: OutlierFlag[] = [];
-
     const zflag = (field: keyof DailyEntry, hintLabel: string) => {
         const b = base[field];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const val = (entry as any)[field] as number | null;
         if (!b || b.mean == null || val == null) return;
         if (!b.sd || b.sd === 0) return;
@@ -115,12 +108,10 @@ function outlierFlags(
     zflag("whoopRhr", "RHR");
     zflag("ouraRhr", "RHR");
 
-    // Steps are optional; do not treat missing/0-today as a physiological outlier
     const isToday = entry.date === new Date().toISOString().slice(0, 10);
-    if (!(isToday && entry.steps === 0)) {
+    if (!(isToday && (entry.steps === 0 || entry.steps == null))) {
         zflag("steps", "Steps");
     }
-
     zflag("fatigue", "Fatigue");
 
     if (base.whoopRhr?.mean != null && entry.whoopRhr != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs)
@@ -156,10 +147,7 @@ export function computeDayAssessment(
     const t = getThresholds(mode);
     const base = computeBaselines(entries, baselineDays, entry.date);
     const flags = outlierFlags(entry, base, t);
-
-    const isToday = entry.date === new Date().toISOString().slice(0, 10);
     const stepsMissing = !!entry.morningEntry || (entry.steps == null);
-
     const votes = classifyRecovery(entry);
     const voteResults: { device: string; state: RecoveryState }[] = [];
 
@@ -256,6 +244,7 @@ export function computeDayAssessment(
             const idx = sorted.findIndex(e => e.date === entry.date);
             const prev1 = idx > 0 ? sorted[idx - 1] : null;
             const prev2 = idx > 1 ? sorted[idx - 2] : null;
+
             const prevAssess1 = prev1 ? computeDayAssessment(prev1, sorted, baselineDays, mode, _depth + 1) : null;
             const prevAssess2 = prev2 ? computeDayAssessment(prev2, sorted, baselineDays, mode, _depth + 1) : null;
 
@@ -275,90 +264,59 @@ export function computeDayAssessment(
     // --- Load sequencing (anti-stacking) ---
     const HIGH_STEPS = 9500;
     let loadStackFlag = false;
-
     if (_depth === 0 && mode === "adt") {
         try {
             const sortedSeq = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
             const i = sortedSeq.findIndex(e => e.date === entry.date);
-
             if (i >= 2) {
                 const d1 = sortedSeq[i - 1];
                 const d2 = sortedSeq[i - 2];
-
                 const daysDiff = (aISO: string, bISO: string) => {
                     const a = new Date(aISO + "T00:00:00");
                     const b = new Date(bISO + "T00:00:00");
                     return Math.round((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000));
                 };
-
                 const consecutive = (daysDiff(d2.date, d1.date) === 1) && (daysDiff(d1.date, entry.date) === 1);
-                const s1 = d1.steps;
-                const s2 = d2.steps;
-
-                if (consecutive && s1 != null && s2 != null && s1 >= HIGH_STEPS && s2 >= HIGH_STEPS) {
+                if (consecutive && d1.steps != null && d2.steps != null && d1.steps >= HIGH_STEPS && d2.steps >= HIGH_STEPS) {
                     loadStackFlag = true;
                 }
             }
         } catch (e) { }
     }
 
-    if (cycleLabel) {
-        why.push("Pattern suggests a post‑regulation dip (common in ADT/CFS physiology): protect the morning and reassess later in the day.");
-    }
-    if (stepsMissing) {
-        why.push("Steps not yet entered (morning entry) → steps excluded from outliers/confidence.");
-    }
+    if (cycleLabel) why.push("Pattern suggests a post‑regulation dip: protect the morning and reassess later.");
+    if (stepsMissing) why.push("Steps not yet entered (morning entry) → excluded from outliers.");
 
-    // Movement guidance phrases
-    const moveGoWolf = "Go Wolf";
-    const moveEasy = "Go Easy, Check Later";
     const moveScout = "Go Slow, Scout";
-    const moveRest = "Rest, Then Resume";
-
     let recText = "";
     const plan: string[] = [];
 
     if (rec === "Green") {
-        recText = `Maintain Rhythm — Go Wolf (${moveGoWolf})`;
-        plan.push("Maintain rhythm: walk naturally; hills allowed if they feel good; no need to police zones.");
-        plan.push("Strength work only if it improves symptoms; stop for joint pain.");
+        recText = `Maintain Rhythm — Go Wolf`;
+        plan.push("Maintain rhythm: walk naturally; hills allowed if they feel good.");
+        plan.push("Strength work only if it improves symptoms.");
     } else if (rec === "Yellow") {
-        recText = `Modulate & Observe — Stay in Motion (${moveEasy})`;
-        plan.push("Modulate: keep the walk easy/conversational; prefer flatter routes; avoid 'testing' the system.");
+        recText = `Modulate & Observe — Stay in Motion`;
+        plan.push("Modulate: keep the walk easy/conversational; avoid 'testing' the system.");
         plan.push("Reassess after ~3–5 pm before adding intensity.");
-    } else { // Red
+    } else {
         if (cycleLabel) {
-            recText = `Morning Protection — Prime, Don’t Train (${moveScout})`;
+            recText = `Morning Protection — Scout`;
             plan.push("Morning protection: keep the morning gentle.");
-            plan.push("Short, easy walk only if it lightens heaviness; stop early; avoid experiments.");
-            plan.push("Reassess after ~3–5 pm; prioritize sleep/hydration.");
+            plan.push("Short, easy walk only if it lightens heaviness.");
         } else {
-            recText = `Morning Protection — Prime, Don’t Train (${moveRest})`;
+            recText = `Morning Protection — Rest`;
             plan.push("Protect the system: rest first.");
-            plan.push("Very easy movement only if clearly regulating (minutes, not miles).");
-            plan.push("Resume normal walking once symptoms settle; prioritize sleep/hydration.");
         }
     }
 
-    // Load sequencing override
     if (mode === "adt" && loadStackFlag && rec !== "Red") {
-        why.push(`Load sequencing: two consecutive high-step days (≥${HIGH_STEPS.toLocaleString()} steps) detected → Scout day to prevent delayed dysregulation.`);
-        plan.length = 0; // Clear and replace with scout plan
-        if (rec === "Green") {
-            recText = `REGULATED — Scout Day (${moveScout})`;
-            plan.push("Scout day: move to maintain trust, but de-stack load.");
-            plan.push("Shorter or flatter walk; conversational pace; hills allowed but not chased.");
-            plan.push("End feeling you could do more.");
-            plan.push("Skip strength unless it clearly improves symptoms and joints feel safe.");
-        } else {
-            recText = `Modulate & Observe — Scout Day (${moveScout})`;
-            plan.push("Scout day: keep movement, reduce demand.");
-            plan.push("Prefer flatter route and easy pace; avoid testing the system.");
-            plan.push("Reassess after ~3–5 pm before adding any intensity.");
-        }
+        why.push(`Load sequencing: two consecutive high-step days detected → Scout day.`);
+        plan.length = 0;
+        recText = (rec === "Green") ? `REGULATED — Scout Day` : `Modulate & Observe — Scout Day`;
+        plan.push("Scout day: move to maintain trust, but de-stack load.");
     }
 
-    // --- Physiological Insights (ADT/CFS Specific) ---
     let insight = "";
     let signalTension = false;
     const morphHigh = (entry.mReady != null && base.mReady?.mean != null && entry.mReady > base.mReady.mean);
@@ -367,14 +325,10 @@ export function computeDayAssessment(
 
     if (morphHigh && recLow) {
         signalTension = true;
-        insight = "Capacity vs. Consolidation Mismatch: Engine capacity is high (Morpheus), but battery recharge is lagging (Oura/Whoop). Stay conservative.";
-    } else if (morphHigh && !recLow && majority === "ok") {
-        insight = "Regulated Capacity: Metrics are aligned. Maintain rhythm to build durability.";
-    } else if (!morphHigh && recLow && majority === "stressed") {
-        insight = "Consolidation Crisis: System is prioritizing recovery. Focus on morning protection.";
+        insight = "Capacity vs. Consolidation Mismatch: Engine capacity is high, but battery recharge is lagging.";
     }
 
-    // --- Nuanced Fragility & Mantra Logic (v2.3) ---
+    // --- Nuanced Fragility & Mantra Logic ---
     let fragilityType: "Consolidation" | "Global" | "Recovering" | "None" = "None";
     let mantra = "";
     let scoutCheck = "";
@@ -382,157 +336,80 @@ export function computeDayAssessment(
     const hrvLow = (entry.mHrv != null && base.mHrv?.mean != null && (base.mHrv.mean - entry.mHrv) / base.mHrv.mean >= t.hrvDropPct);
     const rhrHigh = (entry.ouraRhr != null && base.ouraRhr?.mean != null && (entry.ouraRhr - base.ouraRhr.mean) >= t.rhrAbs) ||
         (entry.whoopRhr != null && base.whoopRhr?.mean != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs);
-    const majorityStressed = majority === "stressed";
 
-    // Global Fragility: Autonomic Collapse Signature
-    if (majorityStressed && (hrvLow || rhrHigh || (entry.fatigue != null && entry.fatigue >= 8))) {
+    if (majority === "stressed" && (hrvLow || rhrHigh || (entry.fatigue != null && entry.fatigue >= 8))) {
         fragilityType = "Global";
-        mantra = "Autonomic Reset: Systemic crash signature detected. Protection is mandatory today to prevent a deeper spiral.";
+        mantra = "Autonomic Reset: Systemic crash signature detected. Protection is mandatory today.";
         scoutCheck = "Notice any dizziness or heart racing: stay strictly within the lowest effort zones.";
-    }
-    // Consolidation Fragility: Engine OK, Chassis Tender
-    else if (signalTension || (morphHigh && (recLow || (entry.joint != null && entry.joint >= t.jointWarn)))) {
+    } else if (signalTension || (morphHigh && (recLow || (entry.joint != null && entry.joint >= t.jointWarn)))) {
         fragilityType = "Consolidation";
-        mantra = "Scout Then Roam: Consolidation fragility present, not system fragility. Capacity is present, but protection is needed until recovery catches up.";
-        scoutCheck = "Ask after 10 min: 'Is my system loosening or tightening?' Loosening = Grow; Tightening = Protect.";
-    }
-    else if (majority === "ok" && conf >= 80) {
-        mantra = "Build Durability: System is harmonized and stable. Maintain rhythm to build your cumulative ceiling.";
+        mantra = "Scout Then Roam: Consolidation fragility present. Capacity is present, but protection is needed.";
+        scoutCheck = "Ask after 10 min: 'Is my system loosening or tightening?'";
+    } else if (majority === "ok" && conf >= 80) {
+        mantra = "Build Durability: System is harmonized and stable. Maintain rhythm.";
         scoutCheck = "Confirm fluidity through the hips and joints. Keep the 'Wolf' mindset.";
     } else {
         mantra = "Modulate & Observe: Transition day. Use movement to refine the picture.";
-        scoutCheck = "Check for energy shifts post-exercise. Do you feel more or less regulated?";
+        scoutCheck = "Check for energy shifts post-exercise.";
     }
 
     // --- Load Memory (48h Decay) ---
-    const calculateLoadMemory = (targetDate: string, allEntries: DailyEntry[]) => {
-        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
-        const idx = sorted.findIndex(e => e.date === targetDate);
-        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const, intensityReady: true };
+    const calculateLoadMemory = () => {
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = sorted.findIndex(e => e.date === entry.date);
+        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const };
 
-        // Personalized threshold: 1.2x mean or 9500 floor
         const stepThreshold = Math.max(9500, (base.steps?.mean || 0) * 1.2);
-
         const d0 = (sorted[idx].steps || 0) >= stepThreshold ? 1.0 : 0;
         const d1 = idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold ? 0.5 : 0;
-        const d2 = idx > 2 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
+        const d2 = idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
 
         const total = Math.min(d0 + d1 + d2, 1.5);
-
         let status: "COOL" | "WARM" | "HOT" | "PEAK" = "COOL";
         if (total >= 1.25) status = "PEAK";
         else if (total >= 0.75) status = "HOT";
         else if (total > 0) status = "WARM";
 
-        // Intensity clearance: Cool enough + Stable + No Tension
-        const intensityReady = total < 0.5 && crashStatus === "Stable" && !signalTension && majority === "ok";
-
-        return {
-            total,
-            array: [d2, d1, d0],
-            status,
-            intensityReady
-        };
+        return { total, array: [d2, d1, d0], status };
     };
 
-    const { total: loadMemory, array: loadHeatArray, status: loadStatus, intensityReady } = calculateLoadMemory(entry.date, entries);
+    const { total: loadMemory, array: loadHeatArray, status: loadStatus } = calculateLoadMemory();
 
-    // --- Crash Signature Logic (v2) ---
-    const getCrashScore = (targetDate: string, allEntries: DailyEntry[]) => {
-        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
+    // --- Crash Score ---
+    const getCrashScore = (targetDate: string) => {
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === targetDate);
         if (idx === -1) return 0;
-
-        const window = sorted.slice(Math.max(0, idx - 2), idx + 1); // Last 3 days
+        const window = sorted.slice(Math.max(0, idx - 2), idx + 1);
         if (window.length < 2) return 0;
 
         let score = 0;
-
-        // 1. HRV Trend (Morpheus)
         const avgHrv = window.reduce((acc, e) => acc + (e.mHrv || 0), 0) / window.length;
         if (base.mHrv?.mean && avgHrv < base.mHrv.mean * 0.9) score += 1;
-
-        // 2. RHR Trend (Oura/Whoop)
-        const avgRhr = window.reduce((acc, e) => {
-            const r = e.ouraRhr || e.whoopRhr || 0;
-            return acc + r;
-        }, 0) / window.length;
-        if ((base.ouraRhr?.mean && avgRhr > base.ouraRhr.mean + 3) ||
-            (base.whoopRhr?.mean && avgRhr > base.whoopRhr.mean + 3)) score += 1;
-
-        // 3. Fatigue Trend
+        const avgRhr = window.reduce((acc, e) => acc + (e.ouraRhr || e.whoopRhr || 0), 0) / window.length;
+        if ((base.ouraRhr?.mean && avgRhr > base.ouraRhr.mean + 3) || (base.whoopRhr?.mean && avgRhr > base.whoopRhr.mean + 3)) score += 1;
         const avgFatigue = window.reduce((acc, e) => acc + (e.fatigue || 0), 0) / window.length;
         if (avgFatigue >= 6.5) score += 1;
-
-        // 4. Load Memory Factor
         if (loadMemory >= 0.75) score += 1;
+        if (window.filter(e => (e.ouraRec || 0) < 50 || (e.whoopRec || 0) < 50).length >= 2) score += 2;
+        if (window.filter(e => (e.joint || 0) >= t.jointWarn).length >= 2) score += 1;
 
-        // 5. Convergence check
-        const recoveryLow = window.filter(e => (e.ouraRec || 0) < 50 || (e.whoopRec || 0) < 50).length >= 2;
-        if (recoveryLow) score += 2;
-
-        // 6. Joint/Pain Sensitivity
-        const painActive = window.filter(e => (e.joint || 0) >= t.jointWarn).length >= 2;
-        if (painActive) score += 1;
-
-        // 7. Oura HRV Suppression (Phase 2 - Slow Signal)
-        const hasManualSuppression = window.some(e => e.ouraHrvStatus === "Pay Attention" || e.ouraHrvStatus === "Fair");
         const ouraHrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
-
-        let suppressedScale = 0;
-        if (window.some(e => e.ouraHrvStatus === "Pay Attention")) suppressedScale = 1.0;
-        else if (window.some(e => e.ouraHrvStatus === "Fair")) suppressedScale = 0.5;
-
-        if (ouraHrvs.length >= 2) {
+        if (ouraHrvs.length >= 2 && base.ouraHrv?.mean) {
             const avgOura = ouraHrvs.reduce((a, b) => a + b, 0) / ouraHrvs.length;
-            if (base.ouraHrv?.mean) {
-                if (avgOura < base.ouraHrv.mean * 0.85) suppressedScale = Math.max(suppressedScale, 1.0);
-                else if (avgOura < base.ouraHrv.mean * 0.95) suppressedScale = Math.max(suppressedScale, 0.5);
-            }
+            if (avgOura < base.ouraHrv.mean * 0.85) score += 1.0;
+            else if (avgOura < base.ouraHrv.mean * 0.95) score += 0.5;
         }
-        score += suppressedScale;
-
         return score;
     };
 
-    // --- Oura HRV Trend Categorization ---
-    const getOuraHrvStatus = (targetDate: string, currentEntry: DailyEntry, allEntries: DailyEntry[]): "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown" => {
-        // Manual override from Entry Wizard
-        if (currentEntry.ouraHrvStatus) return currentEntry.ouraHrvStatus;
-
-        const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
-        const idx = sorted.findIndex(e => e.date === targetDate);
-        if (idx === -1 || !base.ouraHrv?.mean) return "Unknown";
-
-        const window = sorted.slice(Math.max(0, idx - 2), idx + 1);
-        const hrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
-        if (hrvs.length === 0) return "Unknown";
-
-        const avg = hrvs.reduce((a, b) => a + b, 0) / hrvs.length;
-        if (avg >= base.ouraHrv.mean) return "Optimal";
-        if (avg >= base.ouraHrv.mean * 0.95) return "Good";
-        if (avg >= base.ouraHrv.mean * 0.85) return "Fair";
-        return "Pay Attention";
-    };
-
-    const ouraHrvStatus = getOuraHrvStatus(entry.date, entry, entries);
-
-    const currentScore = getCrashScore(entry.date, entries);
-
-    // Persistence Rule: De-escalation requires 2 days of stability
-    // We'll look at yesterday's score to dampen the drop
+    const currentScore = getCrashScore(entry.date);
     let finalScore = currentScore;
     const sortedEntries = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const entryIdx = sortedEntries.findIndex(e => e.date === entry.date);
-
     if (entryIdx > 0) {
-        const prevEntry = sortedEntries[entryIdx - 1];
-        const prevScore = getCrashScore(prevEntry.date, entries);
-        // If current is much lower than yesterday, only allow a partial drop
-        if (currentScore < prevScore) {
-            // "Cannot de-escalate based on one day of data"
-            finalScore = Math.max(currentScore, prevScore - 0.5);
-        }
+        const prevScore = getCrashScore(sortedEntries[entryIdx - 1].date);
+        if (currentScore < prevScore) finalScore = Math.max(currentScore, prevScore - 0.5);
     }
 
     let crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State" = "Stable";
@@ -541,18 +418,33 @@ export function computeDayAssessment(
     else if (finalScore >= 2.5) crashStatus = "Pre-Crash";
     else if (finalScore >= 1) crashStatus = "Vulnerable";
 
-    // --- Bridge Logic: Crash Status vs Fragility (v2.9.4) ---
+    const intensityReady = loadMemory < 0.5 && crashStatus === "Stable" && !signalTension && majority === "ok";
+
     if (crashStatus !== "Stable" && fragilityType === "None") {
         fragilityType = "Recovering";
-        mantra = "Respect the Tail: System is stabilizing, but the recent crash signature is still active. Recovery is the priority.";
-        scoutCheck = "Notice if 'feeling good' leads to sudden fatigue. Keep the pace conversational.";
     }
+
+    const getOuraHrvStatus = () => {
+        if (entry.ouraHrvStatus) return entry.ouraHrvStatus;
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+        const idx = sorted.findIndex(e => e.date === entry.date);
+        if (idx === -1 || !base.ouraHrv?.mean) return "Unknown";
+        const window = sorted.slice(Math.max(0, idx - 2), idx + 1);
+        const hrvs = window.map(e => e.ouraHrv).filter((v): v is number => v != null && v > 0);
+        if (hrvs.length === 0) return "Unknown";
+        const avg = hrvs.reduce((a, b) => a + b, 0) / hrvs.length;
+        if (avg >= base.ouraHrv.mean) return "Optimal";
+        if (avg >= base.ouraHrv.mean * 0.95) return "Good";
+        if (avg >= base.ouraHrv.mean * 0.85) return "Fair";
+        return "Pay Attention";
+    };
 
     return {
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, loadHeatArray, loadStatus, intensityReady, ouraHrvStatus, cycleLabel
+        crashStatus, loadMemory, loadHeatArray, loadStatus, intensityReady,
+        ouraHrvStatus: getOuraHrvStatus(), cycleLabel
     };
 }
 
@@ -563,8 +455,6 @@ export function voteLabelFromAssess(assess: DayAssessment): string {
     if (assess.majority === "stressed") return "DYSREGULATED";
     return String(assess.majority || "").toUpperCase();
 }
-
-// --- Bundle Generation ---
 
 function fmt(n: number | null | undefined, d = 0): string {
     if (n == null || Number.isNaN(n)) return "";
@@ -601,10 +491,8 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings,
     else assess.flags.forEach((f) => lines.push(`- ${f.field}: ${f.kind === "z" ? ("z=" + fmt(f.z, 2)) : f.kind} (${f.hint || ""})`));
     lines.push("");
 
-    // Recent context relative to target date
     const targetIdx = sorted.findIndex(e => e.date === latest.date);
     const recent = sorted.slice(Math.max(0, targetIdx - 13), targetIdx + 1).reverse();
-
     lines.push(`Recent Context (ending ${latest.date}):`);
     recent.forEach((e) => {
         lines.push(`- ${e.date}: mReady=${fmt(e.mReady)} mHRV=${fmt(e.mHrv)} ouraRec=${fmt(e.ouraRec)} whoopRec=${fmt(e.whoopRec)} whoopRHR=${fmt(e.whoopRhr)} ouraRHR=${fmt(e.ouraRhr)} steps=${fmt(e.steps)} fatigue=${fmt(e.fatigue)} res=${e.resistance} joint=${fmt(e.joint)} notes="${e.notes || ""}"`);
