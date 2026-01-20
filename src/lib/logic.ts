@@ -408,21 +408,34 @@ export function computeDayAssessment(
     const calculateLoadMemory = (targetDate: string, allEntries: DailyEntry[]) => {
         const sorted = [...allEntries].sort((a, b) => a.date.localeCompare(b.date));
         const idx = sorted.findIndex(e => e.date === targetDate);
-        if (idx === -1) return { total: 0, array: [0, 0, 0] };
+        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const, intensityReady: true };
 
-        const stepThreshold = 9500;
+        // Personalized threshold: 1.2x mean or 9500 floor
+        const stepThreshold = Math.max(9500, (base.steps?.mean || 0) * 1.2);
 
         const d0 = (sorted[idx].steps || 0) >= stepThreshold ? 1.0 : 0;
         const d1 = idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold ? 0.5 : 0;
-        const d2 = idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
+        const d2 = idx > 2 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
+
+        const total = Math.min(d0 + d1 + d2, 1.5);
+
+        let status: "COOL" | "WARM" | "HOT" | "PEAK" = "COOL";
+        if (total >= 1.25) status = "PEAK";
+        else if (total >= 0.75) status = "HOT";
+        else if (total > 0) status = "WARM";
+
+        // Intensity clearance: Cool enough + Stable + No Tension
+        const intensityReady = total < 0.5 && crashStatus === "Stable" && !signalTension && majority === "ok";
 
         return {
-            total: Math.min(d0 + d1 + d2, 1.5),
-            array: [d2, d1, d0]
+            total,
+            array: [d2, d1, d0],
+            status,
+            intensityReady
         };
     };
 
-    const { total: loadMemory, array: loadHeatArray } = calculateLoadMemory(entry.date, entries);
+    const { total: loadMemory, array: loadHeatArray, status: loadStatus, intensityReady } = calculateLoadMemory(entry.date, entries);
 
     // --- Crash Signature Logic (v2) ---
     const getCrashScore = (targetDate: string, allEntries: DailyEntry[]) => {
@@ -539,7 +552,7 @@ export function computeDayAssessment(
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, loadHeatArray, ouraHrvStatus, cycleLabel
+        crashStatus, loadMemory, loadHeatArray, loadStatus, intensityReady, ouraHrvStatus, cycleLabel
     };
 }
 

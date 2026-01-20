@@ -55,6 +55,8 @@ export interface DayAssessment {
     crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
     loadMemory: number;
     loadHeatArray: number[];
+    loadStatus: "COOL" | "WARM" | "HOT" | "PEAK";
+    intensityReady: boolean;
     ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";
     cycleLabel?: string;
 }

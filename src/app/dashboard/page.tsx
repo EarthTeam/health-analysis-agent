@@ -325,18 +325,27 @@ export default function DashboardPage() {
 
                     {/* Load Memory Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Load Memory (48h)</h3>
-                            <span className={cn(
-                                "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                assessment.loadMemory > 1.0 ? "bg-red-100 text-red-700" :
-                                    assessment.loadMemory > 0.5 ? "bg-amber-100 text-amber-700" :
-                                        "bg-emerald-100 text-emerald-700"
-                            )}>
-                                {assessment.loadMemory > 0 ? "STILL HOT" : "COOL"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                {assessment.intensityReady && (
+                                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">
+                                        <Activity className="w-3 h-3" />
+                                        CEILING RAISED
+                                    </span>
+                                )}
+                                <span className={cn(
+                                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                    assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-100 text-red-700" :
+                                        assessment.loadStatus === "WARM" ? "bg-amber-100 text-amber-700" :
+                                            "bg-emerald-100 text-emerald-700"
+                                )}>
+                                    {assessment.loadStatus}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-end gap-4">
+
+                        <div className="flex items-end gap-4 mb-4">
                             <div>
                                 <div className="flex items-end gap-2">
                                     <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
@@ -359,15 +368,26 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="flex justify-between text-[8px] text-muted-foreground uppercase tracking-tighter mt-1">
+                        <div className="flex justify-between text-[8px] text-muted-foreground uppercase tracking-tighter mt-1 mb-4">
                             <span>-48h</span>
                             <span>-24h</span>
                             <span>Today</span>
                         </div>
 
-                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed italic border-t border-border pt-2">
-                            How much recent load is the system still processing?
-                        </p>
+                        <div className="pt-3 border-t border-border">
+                            <p className="text-sm font-bold text-foreground mb-1">
+                                {assessment.loadStatus === "COOL" ? "The Floor is Stable" :
+                                    assessment.loadStatus === "WARM" ? "Clearing Residual Load" :
+                                        "System is Processing Peak Load"}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                                {assessment.intensityReady
+                                    ? "Previous loads have cooled. Safe to test higher Morpheus intensity zones if symptoms remain quiet."
+                                    : assessment.loadStatus === "COOL"
+                                        ? "System is processed, but other signals suggest caution. Stay in your current ceiling."
+                                        : "Recent volume is still being absorbed. Keep heart rate zones conservative to avoid stacking lag."}
+                            </p>
+                        </div>
                     </div>
 
                     {/* Fragility Card */}
