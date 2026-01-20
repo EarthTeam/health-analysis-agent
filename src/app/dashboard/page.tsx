@@ -3,30 +3,43 @@
 import { useStore } from "@/lib/store";
 import { computeDayAssessment, makeAnalysisBundle, voteLabelFromAssess } from "@/lib/logic";
 import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from "recharts";
 
 export default function DashboardPage() {
     const { entries, settings } = useStore();
     const [copied, setCopied] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+    const effectiveDate = useMemo(() => {
+        if (selectedDate) return selectedDate;
+        if (!entries.length) return null;
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+        return sorted[sorted.length - 1].date;
+    }, [entries, selectedDate]);
 
     const assessmentResult = useMemo(() => {
-        if (!entries.length) return null;
-        const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-        const latest = sorted[sorted.length - 1];
+        if (!entries.length || !effectiveDate) return null;
+        const currentEntry = entries.find(e => e.date === effectiveDate);
+        if (!currentEntry) return null;
+
         return {
-            assessment: computeDayAssessment(latest, entries, settings.baselineDays, settings.mode),
-            latest
+            assessment: computeDayAssessment(currentEntry, entries, settings.baselineDays, settings.mode),
+            latest: currentEntry
         };
-    }, [entries, settings]);
+    }, [entries, settings, effectiveDate]);
 
     const { assessment, latest } = assessmentResult || { assessment: null, latest: null };
 
     const chartData = useMemo(() => {
-        if (!entries.length) return [];
-        const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-        const window = sorted.slice(-settings.baselineDays);
+        if (!entries.length || !effectiveDate) return [];
+        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+        const index = sorted.findIndex(e => e.date === effectiveDate);
+        if (index === -1) return [];
+
+        const window = sorted.slice(Math.max(0, index - settings.baselineDays + 1), index + 1);
 
         return window.map(entry => {
             const assess = computeDayAssessment(entry, entries, settings.baselineDays, settings.mode);
@@ -44,12 +57,12 @@ export default function DashboardPage() {
                 fullDate: entry.date
             };
         });
-    }, [entries, settings]);
+    }, [entries, settings, effectiveDate]);
 
     const latestDate = latest?.date || null;
 
     const handleCopyBundle = async () => {
-        const text = makeAnalysisBundle(entries, settings);
+        const text = makeAnalysisBundle(entries, settings, effectiveDate || undefined);
         try {
             await navigator.clipboard.writeText(text);
             setCopied(true);
@@ -119,7 +132,13 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
-                        <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md">{latestDate}</span>
+                        <button
+                            onClick={() => setIsCalendarOpen(true)}
+                            className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md hover:bg-secondary/80 transition-colors"
+                        >
+                            <Calendar className="w-3 h-3" />
+                            {latestDate}
+                        </button>
                     </div>
 
                     {/* Morning Scout Check */}
@@ -473,9 +492,108 @@ export default function DashboardPage() {
             {/* Debug / Details Preview */}
             {copied && (
                 <div className="mt-4 p-4 bg-secondary/50 rounded-xl border border-border text-xs font-mono text-muted-foreground overflow-auto max-h-40 whitespace-pre animate-in slide-in-from-bottom-2 duration-300">
-                    {makeAnalysisBundle(entries, settings)}
+                    {makeAnalysisBundle(entries, settings, effectiveDate || undefined)}
                 </div>
             )}
+
+            {/* Calendar Modal */}
+            {isCalendarOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold">Select Date</h3>
+                            <button
+                                onClick={() => setIsCalendarOpen(false)}
+                                className="p-2 hover:bg-secondary rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <CalendarView
+                            entries={entries}
+                            selectedDate={effectiveDate || ""}
+                            onSelect={(date) => {
+                                setSelectedDate(date);
+                                setIsCalendarOpen(false);
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CalendarView({ entries, selectedDate, onSelect }: { entries: any[], selectedDate: string, onSelect: (date: string) => void }) {
+    const entryDates = new Set(entries.map(e => e.date));
+    const [viewDate, setViewDate] = useState(new Date(selectedDate || Date.now()));
+
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+    const monthName = viewDate.toLocaleString('default', { month: 'long' });
+
+    const days = [];
+    // Padding for first day
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        days.push(<div key={`pad-${i}`} className="h-10" />);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const hasEntry = entryDates.has(dateStr);
+        const isSelected = selectedDate === dateStr;
+
+        days.push(
+            <button
+                key={d}
+                disabled={!hasEntry}
+                onClick={() => onSelect(dateStr)}
+                className={cn(
+                    "h-10 w-full rounded-lg flex items-center justify-center text-sm transition-all focus:outline-none",
+                    isSelected ? "bg-primary text-primary-foreground font-bold shadow-md" :
+                        hasEntry ? "hover:bg-primary/10 text-foreground font-medium" : "text-muted-foreground/30 cursor-not-allowed"
+                )}
+            >
+                {d}
+            </button>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+                <span className="font-bold text-lg">{monthName} {year}</span>
+                <div className="flex gap-1">
+                    <button onClick={prevMonth} className="p-2 hover:bg-secondary rounded-lg"><ChevronLeft className="w-4 h-4" /></button>
+                    <button onClick={nextMonth} className="p-2 hover:bg-secondary rounded-lg"><ChevronRight className="w-4 h-4" /></button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                    <div key={d} className="text-[10px] font-bold text-muted-foreground py-2 uppercase">{d}</div>
+                ))}
+                {days}
+            </div>
+
+            <div className="pt-4 border-t border-border flex items-center gap-4 text-[10px] text-muted-foreground justify-center">
+                <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-primary/20"></div>
+                    <span>HAS ENTRY</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <span>SELECTED</span>
+                </div>
+            </div>
         </div>
     );
 }

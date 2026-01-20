@@ -547,17 +547,17 @@ function fmt(n: number | null | undefined, d = 0): string {
     return Number.isFinite(x) ? x.toFixed(d) : "";
 }
 
-export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings): string {
+export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings, targetDate?: string): string {
     if (!entries.length) return "No entries yet.";
     const { baselineDays, mode } = settings;
     const sorted = [...entries].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-    const latest = sorted[sorted.length - 1];
+    const latest = targetDate ? (sorted.find(e => e.date === targetDate) || sorted[sorted.length - 1]) : sorted[sorted.length - 1];
     const assess = computeDayAssessment(latest, sorted, baselineDays, mode);
 
     const lines: string[] = [];
     lines.push("ANALYSIS BUNDLE — 3-Device Cross-Check");
     lines.push(`Mode=${mode.toUpperCase()} Baseline=${baselineDays}d Entries=${entries.length}`);
-    lines.push(`Latest=${latest.date}`);
+    lines.push(`ViewDate=${latest.date}`);
     lines.push(`Inputs: mReady=${fmt(latest.mReady)} mHRV=${fmt(latest.mHrv)} ouraRec=${fmt(latest.ouraRec)} whoopRec=${fmt(latest.whoopRec)} whoopRHR=${fmt(latest.whoopRhr)} ouraRHR=${fmt(latest.ouraRhr)} steps=${fmt(latest.steps)} fatigue=${fmt(latest.fatigue)} res=${latest.resistance} joint=${fmt(latest.joint)} notes="${latest.notes || ""}"`);
     lines.push("");
     lines.push(`Majority=${voteLabelFromAssess(assess)} FatigueSignal=${assess.fatigueSignal.toUpperCase()} Disagree=${assess.disagreement ? "YES" : "NO"} Conf=${assess.conf}/100`);
@@ -575,8 +575,13 @@ export function makeAnalysisBundle(entries: DailyEntry[], settings: AppSettings)
     if (!assess.flags.length) lines.push("- none");
     else assess.flags.forEach((f) => lines.push(`- ${f.field}: ${f.kind === "z" ? ("z=" + fmt(f.z, 2)) : f.kind} (${f.hint || ""})`));
     lines.push("");
-    lines.push("Recent (14):");
-    sorted.slice(-14).reverse().forEach((e) => {
+
+    // Recent context relative to target date
+    const targetIdx = sorted.findIndex(e => e.date === latest.date);
+    const recent = sorted.slice(Math.max(0, targetIdx - 13), targetIdx + 1).reverse();
+
+    lines.push(`Recent Context (ending ${latest.date}):`);
+    recent.forEach((e) => {
         lines.push(`- ${e.date}: mReady=${fmt(e.mReady)} mHRV=${fmt(e.mHrv)} ouraRec=${fmt(e.ouraRec)} whoopRec=${fmt(e.whoopRec)} whoopRHR=${fmt(e.whoopRhr)} ouraRHR=${fmt(e.ouraRhr)} steps=${fmt(e.steps)} fatigue=${fmt(e.fatigue)} res=${e.resistance} joint=${fmt(e.joint)} notes="${e.notes || ""}"`);
     });
     return lines.join("\n");
