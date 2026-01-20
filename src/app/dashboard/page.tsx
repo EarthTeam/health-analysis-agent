@@ -494,8 +494,8 @@ export default function DashboardPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                             {assessment.signalTension
-                                ? "Morpheus engine is hot, but Oura/Whoop battery is lagging. High capacity vs low consolidation."
-                                : "Signals are harmonized. No significant capacity vs consolidation gap."}
+                                ? "Performance Conflict: The Morpheus 'engine' is ready, but the Oura/Whoop 'battery' is still lagging behind."
+                                : "Systemic Alignment: Your ability to perform matches your depth of recovery. No 'engine vs. battery' conflict."}
                         </p>
                     </div>
 

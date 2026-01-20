@@ -325,7 +325,7 @@ export function computeDayAssessment(
 
     if (morphHigh && recLow) {
         signalTension = true;
-        insight = "Capacity vs. Consolidation Mismatch: Engine capacity is high, but battery recharge is lagging.";
+        insight = "Engine vs. Battery Mismatch: Performance capacity is high, but internal recovery is lagging behind.";
     }
 
     // --- Nuanced Fragility & Mantra Logic ---
