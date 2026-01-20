@@ -219,17 +219,43 @@ export default function DashboardPage() {
                                                 assessment.crashStatus === "Vulnerable" ? "bg-amber-100 text-amber-700 border-amber-200" :
                                                     "bg-emerald-100 text-emerald-700 border-emerald-200"
                                 )}>
-                                    {assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " ")}
+                                    {assessment.cycleLabel ? assessment.cycleLabel.toUpperCase() :
+                                        (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
                                 </div>
                             </div>
 
-                            <p className="text-sm font-medium text-foreground leading-snug">
-                                {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
-                                {assessment.crashStatus === "Vulnerable" && "Reduced margin. System absorbing load more slowly."}
-                                {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
-                                {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
-                                {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
-                            </p>
+                            {assessment.cycleLabel === "Post-regulation dip" ? (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-bold text-foreground leading-snug">
+                                        The system has capacity, but neuro-energy hasn&apos;t come online yet.
+                                    </p>
+                                    <ul className="space-y-1">
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Capacity signals remain high (Morpheus readiness)</span>
+                                        </li>
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Neuro-energy not yet online (fatigue + morning flatness)</span>
+                                        </li>
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Recent load present (2 higher-step days)</span>
+                                        </li>
+                                    </ul>
+                                    <p className="text-[10px] italic text-muted-foreground border-t border-border pt-1.5 mt-2">
+                                        Capacity is present, but protection is needed until neuro-energy comes online.
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-sm font-medium text-foreground leading-snug">
+                                    {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
+                                    {assessment.crashStatus === "Vulnerable" && "Reduced margin. System absorbing load more slowly."}
+                                    {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
+                                    {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
+                                    {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
+                                </p>
+                            )}
 
                             <div className="flex gap-1 h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
                                 <div className={cn("h-full flex-1 transition-all", assessment.crashStatus !== "Stable" ? "bg-emerald-500" : "bg-emerald-200 opacity-20")} />
