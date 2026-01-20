@@ -21,7 +21,7 @@ export default function SettingsPage() {
     };
 
     const handleExportCSV = () => {
-        const headers = ["Date", "MorpheusReady", "MorpheusHRV", "OuraRecovery", "WhoopRecovery", "WhoopRHR", "OuraRHR", "Steps", "Fatigue", "Resistance", "JointWarn", "Notes"];
+        const headers = ["Date", "MorpheusReady", "MorpheusHRV", "OuraRecovery", "WhoopRecovery", "WhoopRHR", "OuraRHR", "OuraHRV", "WhoopHRV", "OuraHRVStatus", "Steps", "Fatigue", "Resistance", "JointWarn", "Notes"];
         const rows = [headers.join(",")];
 
         // Sort logic from legacy
@@ -30,6 +30,7 @@ export default function SettingsPage() {
         for (const e of sorted) {
             const vals = [
                 e.date, e.mReady, e.mHrv, e.ouraRec, e.whoopRec, e.whoopRhr, e.ouraRhr,
+                e.ouraHrv, e.whoopHrv, e.ouraHrvStatus || "",
                 e.steps, e.fatigue, e.resistance, e.joint, (e.notes || "").replaceAll('"', '""')
             ].map(v => (v == null ? "" : String(v)));
             vals[vals.length - 1] = `"${vals[vals.length - 1]}"`;
@@ -75,8 +76,9 @@ export default function SettingsPage() {
             entries.map(e => ({
                 date: e.date,
                 m_ready: e.mReady, m_hrv: e.mHrv,
-                oura_rec: e.ouraRec, oura_rhr: e.ouraRhr,
-                whoop_rec: e.whoopRec, whoop_rhr: e.whoopRhr,
+                oura_rec: e.ouraRec, oura_rhr: e.ouraRhr, oura_hrv: e.ouraHrv,
+                oura_hrv_status: e.ouraHrvStatus,
+                whoop_rec: e.whoopRec, whoop_rhr: e.whoopRhr, whoop_hrv: e.whoopHrv,
                 steps: e.steps, fatigue: e.fatigue, resistance: e.resistance,
                 joint: e.joint, notes: e.notes
             })),
@@ -95,8 +97,9 @@ export default function SettingsPage() {
         const mapped: DailyEntry[] = data.map((d: any) => ({
             date: d.date,
             mReady: d.m_ready, mHrv: d.m_hrv,
-            ouraRec: d.oura_rec, ouraRhr: d.oura_rhr,
-            whoopRec: d.whoop_rec, whoopRhr: d.whoop_rhr,
+            ouraRec: d.oura_rec, ouraRhr: d.oura_rhr, ouraHrv: d.oura_hrv || null,
+            ouraHrvStatus: d.oura_hrv_status || undefined,
+            whoopRec: d.whoop_rec, whoopRhr: d.whoop_rhr, whoopHrv: d.whoop_hrv || null,
             steps: d.steps, fatigue: d.fatigue, resistance: d.resistance || "N",
             joint: d.joint, notes: d.notes || ""
         }));
