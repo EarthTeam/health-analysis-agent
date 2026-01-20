@@ -346,32 +346,55 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex items-end gap-4 mb-4">
-                            <div>
-                                <div className="flex items-end gap-2">
+                            <div className="flex-shrink-0">
+                                <div className="flex items-end gap-1">
                                     <span className="text-3xl font-bold text-foreground">{assessment.loadMemory.toFixed(2)}</span>
-                                    <span className="text-xs text-muted-foreground mb-1">heat</span>
+                                    <div className="flex flex-col mb-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none">Heat</span>
+                                        <span className="text-[10px] text-muted-foreground/50">/ 1.50 MAX</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Decay Visualization */}
-                            <div className="flex-1 flex gap-1 h-12 items-end mb-1">
-                                {assessment.loadHeatArray.map((h, i) => (
-                                    <div
-                                        key={i}
-                                        className={cn(
-                                            "flex-1 rounded-t-sm transition-all duration-500",
-                                            h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary"
-                                        )}
-                                        style={{ height: `${(h / 1.0) * 100}%`, minHeight: h > 0 ? '4px' : '2px' }}
-                                    />
-                                ))}
+                            {/* Decay Visualization with Weight Labels */}
+                            <div className="flex-1 flex gap-1.5 h-16 items-end mb-1">
+                                {assessment.loadHeatArray.map((h, i) => {
+                                    const labels = ["0.25", "0.50", "1.00"];
+                                    const weights = [0.25, 0.5, 1.0];
+                                    return (
+                                        <div key={i} className="flex-1 flex flex-col items-center">
+                                            <span className={cn(
+                                                "text-[8px] font-bold mb-1",
+                                                h > 0 ? "text-foreground" : "text-muted-foreground/30"
+                                            )}>
+                                                {h > 0 ? `+${h.toFixed(2)}` : ""}
+                                            </span>
+                                            <div
+                                                className={cn(
+                                                    "w-full rounded-t-sm transition-all duration-500",
+                                                    h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
+                                                )}
+                                                style={{ height: `${(weights[i] / 1.0) * 100}%`, opacity: h > 0 ? 1 : 0.2, minHeight: '2px' }}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        <div className="flex justify-between text-[8px] text-muted-foreground uppercase tracking-tighter mt-1 mb-4">
-                            <span>-48h</span>
-                            <span>-24h</span>
-                            <span>Today</span>
+                        <div className="flex justify-between text-[9px] font-bold text-muted-foreground uppercase tracking-wider mt-1 mb-6 px-1">
+                            <div className="flex flex-col items-center">
+                                <span>-48h</span>
+                                <span className="text-[7px] font-medium opacity-50">Residue</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span>-24h</span>
+                                <span className="text-[7px] font-medium opacity-50">Lag</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <span>Today</span>
+                                <span className="text-[7px] font-medium opacity-50">Load</span>
+                            </div>
                         </div>
 
                         <div className="pt-3 border-t border-border">
