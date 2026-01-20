@@ -375,7 +375,7 @@ export function computeDayAssessment(
     }
 
     // --- Nuanced Fragility & Mantra Logic (v2.3) ---
-    let fragilityType: "Consolidation" | "Global" | "None" = "None";
+    let fragilityType: "Consolidation" | "Global" | "Recovering" | "None" = "None";
     let mantra = "";
     let scoutCheck = "";
 
@@ -522,6 +522,13 @@ export function computeDayAssessment(
     else if (finalScore >= 4) crashStatus = "Crash-Onset";
     else if (finalScore >= 2.5) crashStatus = "Pre-Crash";
     else if (finalScore >= 1) crashStatus = "Vulnerable";
+
+    // --- Bridge Logic: Crash Status vs Fragility (v2.9.4) ---
+    if (crashStatus !== "Stable" && fragilityType === "None") {
+        fragilityType = "Recovering";
+        mantra = "Respect the Tail: System is stabilizing, but the recent crash signature is still active. Recovery is the priority.";
+        scoutCheck = "Notice if 'feeling good' leads to sudden fatigue. Keep the pace conversational.";
+    }
 
     return {
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
