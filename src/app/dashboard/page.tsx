@@ -279,9 +279,17 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
                                 <div className="flex items-center gap-2">
                                     <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
-                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recovery Suppression</span>
+                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recharge Status</span>
                                 </div>
-                                <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                        (latest.ouraRec || 0) < 60 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                                    )}>
+                                        {(latest.ouraRec || 0) < 60 ? "SUPPRESSED" : "HEALTHY"}
+                                    </span>
+                                    <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
@@ -308,7 +316,10 @@ export default function DashboardPage() {
                         </div>
 
                         <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
-                            Detects autonomic tremors and recharge deficits that lag behind 24-48h of load.
+                            Detects autonomic tremors and recharge deficits.
+                            <span className="block mt-1 font-medium text-foreground/70">
+                                &ldquo;Phantom Energy&rdquo;: You may have the capacity to move, but not the &ldquo;permission&rdquo; to replenish.
+                            </span>
                         </p>
                     </div>
 
