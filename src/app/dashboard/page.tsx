@@ -117,30 +117,16 @@ export default function DashboardPage() {
                                     <span className={cn("text-2xl md:text-3xl font-bold", ringColor)}>{assessment.recText}</span>
                                 </div>
 
-                                <div className="h-8 w-px bg-border hidden sm:block"></div>
-
-                                <div>
-                                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</h3>
-                                    <span className={cn(
-                                        "text-xl font-bold uppercase tracking-tight",
-                                        assessment.cycleLabel ? "text-amber-500" :
-                                            assessment.majority === "ok" ? "text-emerald-500" :
-                                                assessment.majority === "stressed" ? "text-red-500" :
-                                                    "text-amber-500"
-                                    )}>
-                                        {voteLabelFromAssess(assessment)}
-                                    </span>
-                                </div>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setIsCalendarOpen(true)}
-                            className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md hover:bg-secondary/80 transition-colors"
-                        >
-                            <Calendar className="w-3 h-3" />
-                            {latestDate}
-                        </button>
                     </div>
+                    <button
+                        onClick={() => setIsCalendarOpen(true)}
+                        className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md hover:bg-secondary/80 transition-colors"
+                    >
+                        <Calendar className="w-3 h-3" />
+                        {latestDate}
+                    </button>
 
                     {/* Morning Scout Check */}
                     <div className="mb-6 p-4 bg-secondary/30 rounded-xl border border-border flex gap-3 items-center">
@@ -197,6 +183,28 @@ export default function DashboardPage() {
 
                 {/* Stats Column */}
                 <div className="space-y-6">
+                    {/* Daily Status Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Daily Status</h3>
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-3 w-3 rounded-full",
+                                assessment.cycleLabel ? "bg-amber-500" :
+                                    assessment.majority === "ok" ? "bg-emerald-500" :
+                                        assessment.majority === "stressed" ? "bg-red-500" :
+                                            "bg-amber-500"
+                            )}></div>
+                            <span className={cn(
+                                "text-2xl font-bold uppercase tracking-tight",
+                                assessment.cycleLabel ? "text-amber-500" :
+                                    assessment.majority === "ok" ? "text-emerald-500" :
+                                        assessment.majority === "stressed" ? "text-red-500" :
+                                            "text-amber-500"
+                            )}>
+                                {voteLabelFromAssess(assessment)}
+                            </span>
+                        </div>
+                    </div>
                     {/* Crash Signature Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Crash Signature</h3>
@@ -399,7 +407,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Trends Graph */}
+
             <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-bold text-foreground">Recovery Trends ({settings.baselineDays}d Window)</h2>
@@ -495,39 +503,43 @@ export default function DashboardPage() {
             </div>
 
             {/* Debug / Details Preview */}
-            {copied && (
-                <div className="mt-4 p-4 bg-secondary/50 rounded-xl border border-border text-xs font-mono text-muted-foreground overflow-auto max-h-40 whitespace-pre animate-in slide-in-from-bottom-2 duration-300">
-                    {/* @ts-ignore */}
-                    {makeAnalysisBundle(entries, settings, effectiveDate || undefined)}
-                </div>
-            )}
+            {
+                copied && (
+                    <div className="mt-4 p-4 bg-secondary/50 rounded-xl border border-border text-xs font-mono text-muted-foreground overflow-auto max-h-40 whitespace-pre animate-in slide-in-from-bottom-2 duration-300">
+                        {/* @ts-ignore */}
+                        {makeAnalysisBundle(entries, settings, effectiveDate || undefined)}
+                    </div>
+                )
+            }
 
             {/* Calendar Modal */}
-            {isCalendarOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold">Select Date</h3>
-                            <button
-                                onClick={() => setIsCalendarOpen(false)}
-                                className="p-2 hover:bg-secondary rounded-full transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
+            {
+                isCalendarOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold">Select Date</h3>
+                                <button
+                                    onClick={() => setIsCalendarOpen(false)}
+                                    className="p-2 hover:bg-secondary rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
 
-                        <CalendarView
-                            entries={entries}
-                            selectedDate={effectiveDate || ""}
-                            onSelect={(date) => {
-                                setSelectedDate(date);
-                                setIsCalendarOpen(false);
-                            }}
-                        />
+                            <CalendarView
+                                entries={entries}
+                                selectedDate={effectiveDate || ""}
+                                onSelect={(date) => {
+                                    setSelectedDate(date);
+                                    setIsCalendarOpen(false);
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 
