@@ -461,7 +461,7 @@ export default function DashboardPage() {
                                         "text-[10px] font-bold px-1.5 py-0.5 rounded",
                                         (latest.ouraRec || 0) < 60 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
                                     )}>
-                                        {(latest.ouraRec || 0) < 60 ? "SUPPRESSED" : "HEALTHY"}
+                                        {(latest.ouraRec || 0) < 60 ? "LOCKED/SATURATED" : "CLEARING LOAD"}
                                     </span>
                                     <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
                                 </div>
