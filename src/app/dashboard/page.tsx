@@ -322,13 +322,13 @@ export default function DashboardPage() {
                                     <div className={cn(
                                         "h-3 w-3 rounded-full",
                                         assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
-                                            assessment.fragilityType === "Consolidation" ? "bg-orange-500" :
+                                            assessment.fragilityType === "Integration Lag" ? "bg-orange-500" :
                                                 assessment.fragilityType === "Recovering" ? "bg-blue-500" : "bg-emerald-500"
                                     )}></div>
                                     <span className={cn(
                                         "text-2xl font-bold uppercase tracking-tight",
                                         assessment.fragilityType === "Global" ? "text-red-500" :
-                                            assessment.fragilityType === "Consolidation" ? "text-orange-500" :
+                                            assessment.fragilityType === "Integration Lag" ? "text-orange-500" :
                                                 assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
                                     )}>
                                         {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                                     {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
-                                        assessment.fragilityType === "Consolidation" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
+                                        assessment.fragilityType === "Integration Lag" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
                                             assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
                                                 "System is harmonized. Safe to build durability."}
                                 </p>

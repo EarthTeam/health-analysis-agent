@@ -55,7 +55,7 @@ export interface DayAssessment {
     why: string[];
     plan: string[];
     insight?: string;
-    fragilityType: "Consolidation" | "Global" | "Recovering" | "None";
+    fragilityType: "Integration Lag" | "Global" | "Recovering" | "None";
     signalTension: boolean;
     mantra: string;
     scoutCheck: string;

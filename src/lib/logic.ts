@@ -418,7 +418,7 @@ export function computeDayAssessment(
     }
 
     // --- Nuanced Fragility & Mantra Logic ---
-    let fragilityType: "Consolidation" | "Global" | "Recovering" | "None" = "None";
+    let fragilityType: "Integration Lag" | "Global" | "Recovering" | "None" = "None";
     let mantra = "";
     let scoutCheck = "";
 
@@ -431,8 +431,8 @@ export function computeDayAssessment(
         mantra = "Autonomic Reset: Systemic crash signature detected. Protection is mandatory today.";
         scoutCheck = "Notice any dizziness or heart racing: stay strictly within the lowest effort zones.";
     } else if (signalTension || (morphHigh && (recLow || (entry.joint != null && entry.joint >= t.jointWarn)))) {
-        fragilityType = "Consolidation";
-        mantra = "Scout Then Roam: Consolidation fragility present. Capacity is present, but protection is needed.";
+        fragilityType = "Integration Lag";
+        mantra = "Scout Then Roam: Integration Lag Emerging. Capacity is present, but protection is needed.";
         scoutCheck = "Ask after 10 min: 'Is my system loosening or tightening?'";
     } else if (majority === "ok" && conf >= 80) {
         mantra = "Build Durability: System is harmonized and stable. Maintain rhythm.";
