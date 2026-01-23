@@ -314,41 +314,83 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Fragility Card */}
-                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm flex flex-col justify-between">
-                            <div>
-                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Fragility Profile</h3>
-                                <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                        "h-3 w-3 rounded-full",
-                                        assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
-                                            assessment.fragilityType === "Integration Lag" ? "bg-orange-500" :
-                                                assessment.fragilityType === "Recovering" ? "bg-blue-500" : "bg-emerald-500"
-                                    )}></div>
-                                    <span className={cn(
-                                        "text-2xl font-bold uppercase tracking-tight",
-                                        assessment.fragilityType === "Global" ? "text-red-500" :
-                                            assessment.fragilityType === "Integration Lag" ? "text-orange-500" :
-                                                assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
-                                    )}>
-                                        {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                                    {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
-                                        assessment.fragilityType === "Integration Lag" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
-                                            assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
-                                                "System is harmonized. Safe to build durability."}
-                                </p>
+                        {/* Lag Seismograph Card */}
+                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lag Seismograph</h3>
+                                <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">24-48h SENSITIVE</span>
                             </div>
 
-                            <div className="mt-6 pt-4 border-t border-border/50">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Heat Limit</span>
-                                    <span className="text-xs font-mono font-bold text-foreground/80">{assessment.loadThreshold.toLocaleString()} steps</span>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
+                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recharge Status</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={cn(
+                                            "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                            (latest.ouraRec || 0) < 60 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                                        )}>
+                                            {(latest.ouraRec || 0) < 60 ? "LOCKED/SATURATED" : "CLEARING LOAD"}
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
+                                    </div>
                                 </div>
-                                <div className="text-[9px] text-muted-foreground italic">Personalized based on 1.2x baseline mean</div>
+
+                                <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                            "w-2 h-2 rounded-full",
+                                            assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
+                                                assessment.ouraHrvStatus === "Good" ? "bg-emerald-400" :
+                                                    assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
+                                                        assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
+                                        )} />
+                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Oura HRV Trend</span>
+                                    </div>
+                                    <span className={cn(
+                                        "text-xs font-bold px-2 py-0.5 rounded-lg",
+                                        assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500/10 text-emerald-600" :
+                                            assessment.ouraHrvStatus === "Good" ? "bg-emerald-400/10 text-emerald-600" :
+                                                assessment.ouraHrvStatus === "Fair" ? "bg-amber-500/10 text-amber-600" :
+                                                    "bg-red-500/10 text-red-600"
+                                    )}>
+                                        {assessment.ouraHrvStatus}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                            "w-2 h-2 rounded-full",
+                                            assessment.clearanceRate >= 35 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                                                assessment.clearanceRate >= 25 ? "bg-emerald-400" :
+                                                    assessment.clearanceRate >= 15 ? "bg-amber-500" : "bg-red-500"
+                                        )} />
+                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Absorption Power</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={cn(
+                                            "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                            assessment.clearanceRate >= 35 ? "bg-emerald-500/10 text-emerald-600" :
+                                                assessment.clearanceRate >= 25 ? "bg-emerald-400/10 text-emerald-600" :
+                                                    assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
+                                        )}>
+                                            {assessment.clearanceRate >= 35 ? "FLUSHING" :
+                                                assessment.clearanceRate >= 25 ? "CLEAN" :
+                                                    assessment.clearanceRate >= 15 ? "SLUGGISH" : "LOCKED"}
+                                        </span>
+                                        <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{assessment.clearanceRate}%</span>
+                                    </div>
+                                </div>
                             </div>
+
+                            <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
+                                Links autonomic recharge to Load Memory clearance.
+                                <span className="block mt-1 font-medium text-foreground/70">
+                                    &ldquo;Absorption Power&rdquo;: Determines how fast yours system drains the reservoir. If &ldquo;Locked,&rdquo; load will stack even with low activity.
+                                </span>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -379,6 +421,43 @@ export default function DashboardPage() {
                                 assessment.statusPhase === "INTEGRATION LAG" ? "Delayed Absorption Phase" :
                                     "System Offline"}
                         </p>
+                    </div>
+
+                    {/* Metabolic Profile Card (formerly Fragility) */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Metabolic Profile</h3>
+                            <div className="flex items-center gap-3">
+                                <div className={cn(
+                                    "h-3 w-3 rounded-full",
+                                    assessment.fragilityType === "Global" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" :
+                                        assessment.fragilityType === "Integration Lag" ? "bg-orange-500" :
+                                            assessment.fragilityType === "Recovering" ? "bg-blue-500" : "bg-emerald-500"
+                                )}></div>
+                                <span className={cn(
+                                    "text-2xl font-bold uppercase tracking-tight",
+                                    assessment.fragilityType === "Global" ? "text-red-500" :
+                                        assessment.fragilityType === "Integration Lag" ? "text-orange-500" :
+                                            assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
+                                )}>
+                                    {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
+                                    assessment.fragilityType === "Integration Lag" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
+                                        assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
+                                            "System is harmonized. Safe to build durability."}
+                            </p>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-border/50">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Heat Limit</span>
+                                <span className="text-xs font-mono font-bold text-foreground/80">{assessment.loadThreshold.toLocaleString()} steps</span>
+                            </div>
+                            <div className="text-[9px] text-muted-foreground italic">Personalized based on 1.2x baseline mean</div>
+                        </div>
                     </div>
                     {/* Crash Signature Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
@@ -443,84 +522,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Lag Seismograph Card */}
-                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lag Seismograph</h3>
-                            <span className="text-[10px] font-bold text-primary bg-primary/5 px-1.5 py-0.5 rounded">24-48h SENSITIVE</span>
-                        </div>
 
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
-                                <div className="flex items-center gap-2">
-                                    <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
-                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recharge Status</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                        (latest.ouraRec || 0) < 60 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
-                                    )}>
-                                        {(latest.ouraRec || 0) < 60 ? "LOCKED/SATURATED" : "CLEARING LOAD"}
-                                    </span>
-                                    <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
-                                <div className="flex items-center gap-2">
-                                    <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500" :
-                                            assessment.ouraHrvStatus === "Good" ? "bg-emerald-400" :
-                                                assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
-                                                    assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
-                                    )} />
-                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Oura HRV Trend</span>
-                                </div>
-                                <span className={cn(
-                                    "text-xs font-bold px-2 py-0.5 rounded-lg",
-                                    assessment.ouraHrvStatus === "Optimal" ? "bg-emerald-500/10 text-emerald-600" :
-                                        assessment.ouraHrvStatus === "Good" ? "bg-emerald-400/10 text-emerald-600" :
-                                            assessment.ouraHrvStatus === "Fair" ? "bg-amber-500/10 text-amber-600" :
-                                                "bg-red-500/10 text-red-600"
-                                )}>
-                                    {assessment.ouraHrvStatus}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
-                                <div className="flex items-center gap-2">
-                                    <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        assessment.clearanceRate >= 35 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
-                                            assessment.clearanceRate >= 25 ? "bg-emerald-400" :
-                                                assessment.clearanceRate >= 15 ? "bg-amber-500" : "bg-red-500"
-                                    )} />
-                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Absorption Power</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                        assessment.clearanceRate >= 35 ? "bg-emerald-500/10 text-emerald-600" :
-                                            assessment.clearanceRate >= 25 ? "bg-emerald-400/10 text-emerald-600" :
-                                                assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
-                                    )}>
-                                        {assessment.clearanceRate >= 35 ? "FLUSHING" :
-                                            assessment.clearanceRate >= 25 ? "CLEAN" :
-                                                assessment.clearanceRate >= 15 ? "SLUGGISH" : "LOCKED"}
-                                    </span>
-                                    <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{assessment.clearanceRate}%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
-                            Links autonomic recharge to Load Memory clearance.
-                            <span className="block mt-1 font-medium text-foreground/70">
-                                &ldquo;Absorption Power&rdquo;: Determines how fast yours system drains the reservoir. If &ldquo;Locked,&rdquo; load will stack even with low activity.
-                            </span>
-                        </p>
-                    </div>
 
 
                     {/* Signal Tension Card */}
