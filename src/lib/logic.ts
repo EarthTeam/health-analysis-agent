@@ -19,6 +19,80 @@ export function clamp(x: number, lo: number, hi: number): number {
     return Math.max(lo, Math.min(hi, x));
 }
 
+function calculateLoadReservoir(
+    entries: DailyEntry[],
+    targetDate: string,
+    baselineSteps: number,
+    mode: "standard" | "adt"
+) {
+    const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+    const targetIdx = sorted.findIndex(e => e.date === targetDate);
+    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const };
+
+    let reservoir = 0;
+    const history: { date: string, value: number }[] = [];
+
+    for (let i = 0; i <= targetIdx; i++) {
+        const e = sorted[i];
+
+        // 1. Calculate Today's Contribution
+        let contribution = 0;
+        const steps = e.steps || 0;
+        if (baselineSteps > 0) {
+            const ratio = steps / baselineSteps;
+            if (ratio > 1.0) {
+                // Significant steps above baseline add load
+                contribution += (ratio - 1.0) * 2.0;
+            }
+        }
+
+        if (steps > 9500) contribution += 0.5;
+        if (e.resistance === "Y") contribution += 0.4;
+        if (e.notes?.toLowerCase().includes("hill")) contribution += 0.6;
+
+        reservoir += contribution;
+
+        // 2. Determine Clearance Rate
+        // Simplified state detection for clearance rates
+        const isStressed = (e.fatigue != null && e.fatigue >= 7) || (e.joint != null && e.joint >= 6);
+
+        let clearanceRate = 0.28; // Standard clearance
+        if (mode === "adt") {
+            if (isStressed) clearanceRate = 0.08; // Dysregulated clearance is slow
+            else if (reservoir > 1.5) clearanceRate = 0.15; // Integration lag slows things down
+        }
+
+        reservoir *= (1 - clearanceRate);
+        reservoir = Math.max(0, reservoir);
+
+        history.push({ date: e.date, value: Number(reservoir.toFixed(2)) });
+    }
+
+    const currentLoad = history[history.length - 1].value;
+
+    // Status mapping
+    let status: "Clear" | "Integrating" | "Saturated" = "Clear";
+    if (currentLoad > 2.5) status = "Saturated";
+    else if (currentLoad > 0.8) status = "Integrating";
+
+    // Trend calculation
+    let trend: "Rising" | "Plateau" | "Declining" = "Plateau";
+    if (history.length >= 2) {
+        const last = history[history.length - 1].value;
+        const prev = history[history.length - 2].value;
+        const diff = last - prev;
+        if (diff > 0.1) trend = "Rising";
+        else if (diff < -0.1) trend = "Declining";
+    }
+
+    return {
+        currentLoad,
+        history: history.slice(-10),
+        status,
+        trend
+    };
+}
+
 // --- Thresholds ---
 function getThresholds(mode: "standard" | "adt") {
     if (mode === "adt") {
@@ -236,6 +310,11 @@ export function computeDayAssessment(
     if (disagreement) why.push(`Devices disagree → uncertainty day.`);
     if (!why.length) why.push("Stable vs baseline; devices mostly consistent.");
 
+    // --- PEM-Aware Load Reservoir ---
+    const bSteps = base.steps?.mean || 9500;
+    const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode);
+    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend } = reservoirResults;
+
     // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
     let cycleLabel = "";
     if (_depth === 0) {
@@ -317,6 +396,16 @@ export function computeDayAssessment(
         plan.push("Scout day: move to maintain trust, but de-stack load.");
     }
 
+    // --- PEM Override ---
+    if (loadStatus === "Saturated" && rec !== "Red") {
+        rec = "Yellow";
+        recText = "Unintegrated Load — Scout & Modulate";
+        why.push("Capacity is present, but residual load remains high. Let the system finish clearing before stacking.");
+        plan.length = 0;
+        plan.push("Let the system breathe: prioritize clearance over exploration today.");
+        plan.push("Keep movement gentle and rhythmic.");
+    }
+
     let insight = "";
     let signalTension = false;
     const morphHigh = (entry.mReady != null && base.mReady?.mean != null && entry.mReady > base.mReady.mean);
@@ -353,27 +442,7 @@ export function computeDayAssessment(
         scoutCheck = "Check for energy shifts post-exercise.";
     }
 
-    // --- Load Memory (48h Decay) ---
-    const calculateLoadMemory = () => {
-        const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
-        const idx = sorted.findIndex(e => e.date === entry.date);
-        if (idx === -1) return { total: 0, array: [0, 0, 0], status: "COOL" as const, threshold: 0 };
 
-        const stepThreshold = Math.max(9500, (base.steps?.mean || 0) * 1.2);
-        const d0 = (sorted[idx].steps || 0) >= stepThreshold ? 1.0 : 0;
-        const d1 = idx > 0 && (sorted[idx - 1].steps || 0) >= stepThreshold ? 0.5 : 0;
-        const d2 = idx > 1 && (sorted[idx - 2].steps || 0) >= stepThreshold ? 0.25 : 0;
-
-        const total = Math.min(d0 + d1 + d2, 1.5);
-        let status: "COOL" | "WARM" | "HOT" | "PEAK" = "COOL";
-        if (total >= 1.25) status = "PEAK";
-        else if (total >= 0.75) status = "HOT";
-        else if (total > 0) status = "WARM";
-
-        return { total, array: [d2, d1, d0], status, threshold: stepThreshold };
-    };
-
-    const { total: loadMemory, array: loadHeatArray, status: loadStatus, threshold: loadThreshold } = calculateLoadMemory();
 
     // --- Crash Score ---
     const getCrashScore = (targetDate: string) => {
@@ -443,8 +512,8 @@ export function computeDayAssessment(
         flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, loadHeatArray, loadStatus, intensityReady,
-        loadThreshold,
+        crashStatus, loadMemory, loadHistory, loadStatus, loadTrend, intensityReady,
+        loadThreshold: bSteps * 1.2,
         ouraHrvStatus: getOuraHrvStatus(), cycleLabel
     };
 }

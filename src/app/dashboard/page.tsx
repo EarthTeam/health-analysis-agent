@@ -3,9 +3,9 @@
 import { useStore } from "@/lib/store";
 import { computeDayAssessment, makeAnalysisBundle, voteLabelFromAssess } from "@/lib/logic";
 import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X, Waves, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } from "recharts";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line, AreaChart, Area } from "recharts";
 
 export default function DashboardPage() {
     const { entries, settings } = useStore();
@@ -186,111 +186,86 @@ export default function DashboardPage() {
                     {/* Secondary Metrics Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Load Memory Card */}
-                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Load Memory (48h)</h3>
-                                <div className="flex items-center gap-2">
-                                    {assessment.intensityReady && (
-                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100">
-                                            <Activity className="w-3 h-3" />
-                                            CEILING RAISED
-                                        </span>
-                                    )}
+                        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm flex flex-col">
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                        <Waves className="w-3.5 h-3.5 text-blue-500" />
+                                        Load Memory
+                                    </h3>
+                                    <p className="text-[10px] text-muted-foreground/60 italic font-medium">Unintegrated physiological work</p>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
                                     <span className={cn(
-                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                        assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-100 text-red-700" :
-                                            assessment.loadStatus === "WARM" ? "bg-amber-100 text-amber-700" :
-                                                "bg-emerald-100 text-emerald-700"
+                                        "text-[10px] font-bold px-2 py-0.5 rounded-full select-none",
+                                        assessment.loadStatus === "Saturated" ? "bg-red-100 text-red-700 border border-red-200" :
+                                            assessment.loadStatus === "Integrating" ? "bg-blue-100 text-blue-700 border border-blue-200" :
+                                                "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                     )}>
-                                        {assessment.loadStatus}
+                                        {assessment.loadStatus.toUpperCase()}
                                     </span>
+                                    <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
+                                        {assessment.loadTrend === "Rising" && <TrendingUp className="w-3 h-3 text-red-500" />}
+                                        {assessment.loadTrend === "Declining" && <TrendingDown className="w-3 h-3 text-emerald-500" />}
+                                        {assessment.loadTrend === "Plateau" && <Minus className="w-3 h-3 text-blue-400" />}
+                                        {assessment.loadTrend}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-10 mb-6">
-                                {/* Vertical Total Load Gauge */}
-                                <div className="flex items-center gap-3">
-                                    <div className="flex flex-col justify-between h-32 text-[9px] font-bold text-muted-foreground/50 py-1 uppercase tabular-nums">
-                                        <span>1.5</span>
-                                        <span>1.0</span>
-                                        <span>0.5</span>
-                                        <span>0.0</span>
-                                    </div>
-                                    <div className="h-32 w-4 bg-secondary/30 rounded-full relative overflow-hidden border border-border/50 group">
-                                        <div
-                                            className={cn(
-                                                "absolute bottom-0 left-0 w-full transition-all duration-700 rounded-b-full",
-                                                assessment.loadStatus === "PEAK" || assessment.loadStatus === "HOT" ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]" :
-                                                    assessment.loadStatus === "WARM" || assessment.loadMemory > 0.5 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]" : "bg-emerald-500"
-                                            )}
-                                            style={{ height: `${Math.min((assessment.loadMemory / 1.5) * 100, 100)}%` }}
+                            <div className="flex items-baseline gap-2 mb-4">
+                                <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
+                                    {assessment.loadMemory.toFixed(2)}
+                                </span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reservoir Depth</span>
+                            </div>
+
+                            {/* Reservoir Graph */}
+                            <div className="h-28 w-full mt-auto">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={assessment.loadHistory}>
+                                        <defs>
+                                            <linearGradient id="loadGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"} stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Tooltip
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-background/95 border border-border p-2 rounded-lg shadow-xl backdrop-blur-sm">
+                                                            <p className="text-[10px] font-bold">{payload[0].payload.date}</p>
+                                                            <p className="text-xs font-black text-primary">{payload[0].value}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        {/* Markers */}
-                                        <div className="absolute top-1/3 left-0 w-full h-[0.5px] bg-background/30" />
-                                        <div className="absolute top-2/3 left-0 w-full h-[0.5px] bg-background/30" />
-
-                                        {/* Highlight effect */}
-                                        <div className="absolute top-0 left-1 w-1 h-full bg-white/10 rounded-full pointer-events-none" />
-                                    </div>
-                                </div>
-
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="flex flex-col">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
-                                                    {assessment.loadMemory.toFixed(2)}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Heat</span>
-                                            </div>
-                                            <div className="text-[9px] text-muted-foreground/60 font-medium ml-1 mt-1 uppercase tracking-wider">Cumulative Intensity (48h)</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Decay Visualization */}
-                                    <div className="flex gap-2 h-16 items-end mt-4">
-                                        {assessment.loadHeatArray.map((h, i) => {
-                                            const labels = ["-48h", "-24h", "Today"];
-                                            const subLabels = ["Residue", "Lag", "Today"];
-                                            const weights = [0.25, 0.5, 1.0];
-                                            return (
-                                                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                                                    <div className="w-full relative h-10 flex items-end">
-                                                        <div
-                                                            className={cn(
-                                                                "w-full rounded-t-sm transition-all duration-500",
-                                                                h >= 1.0 ? "bg-red-500" : h >= 0.5 ? "bg-amber-500" : h > 0 ? "bg-emerald-500" : "bg-secondary/40"
-                                                            )}
-                                                            style={{
-                                                                height: `${(weights[i] / 1.0) * 100}%`,
-                                                                opacity: h > 0 ? 1 : 0.15,
-                                                                boxShadow: h > 0 ? '0 -2px 8px -2px rgba(0,0,0,0.1)' : 'none'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col items-center leading-none">
-                                                        <span className="text-[9px] font-bold text-muted-foreground">{labels[i]}</span>
-                                                        <span className="text-[7px] font-bold text-muted-foreground/40 uppercase tracking-tighter">{subLabels[i]}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                        <Area
+                                            type="monotone"
+                                            dataKey="value"
+                                            stroke={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"}
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#loadGradient)"
+                                            isAnimationActive={true}
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
 
-                            <div className="pt-3 border-t border-border">
-                                <p className="text-sm font-bold text-foreground mb-1">
-                                    {assessment.loadStatus === "COOL" ? "The Floor is Stable" :
-                                        assessment.loadStatus === "WARM" ? "Clearing Residual Load" :
-                                            "System is Processing Peak Load"}
+                            <div className="pt-4 border-t border-border mt-4">
+                                <p className="text-sm font-bold text-foreground mb-1 leading-tight">
+                                    {assessment.loadStatus === "Clear" ? "System is Absorbing" :
+                                        assessment.loadStatus === "Integrating" ? "Processing Recent Load" :
+                                            "PEM Risk: System Saturated"}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                    {assessment.intensityReady
-                                        ? "Previous loads have cooled. Safe to test higher Morpheus intensity zones if symptoms remain quiet."
-                                        : assessment.loadStatus === "COOL"
-                                            ? "System is processed, but other signals suggest caution. Stay in your current ceiling."
-                                            : "Recent volume is still being absorbed. Keep heart rate zones conservative to avoid stacking lag."}
+                                    {assessment.loadStatus === "Clear" ? "Clearance exceeds new load. Safe to resume exploration." :
+                                        assessment.loadStatus === "Integrating" ? "Plateau: System is working through recent volume. Hold steady." :
+                                            "Rising: Load accumulating faster than absorption. Settle in and protect your baseline."}
                                 </p>
                             </div>
                         </div>

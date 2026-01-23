@@ -25,6 +25,11 @@ export interface DailyEntry {
     notes: string;
 }
 
+export interface LoadMemoryPoint {
+    date: string;
+    value: number;
+}
+
 export interface AppSettings {
     baselineDays: number;
     mode: "standard" | "adt";
@@ -54,8 +59,9 @@ export interface DayAssessment {
     scoutCheck: string;
     crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
     loadMemory: number;
-    loadHeatArray: number[];
-    loadStatus: "COOL" | "WARM" | "HOT" | "PEAK";
+    loadHistory: LoadMemoryPoint[];
+    loadStatus: "Clear" | "Integrating" | "Saturated";
+    loadTrend: "Rising" | "Plateau" | "Declining";
     intensityReady: boolean;
     loadThreshold: number;
     ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";
