@@ -488,12 +488,36 @@ export default function DashboardPage() {
                                     {assessment.ouraHrvStatus}
                                 </span>
                             </div>
+                            <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        assessment.clearanceRate >= 35 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                                            assessment.clearanceRate >= 25 ? "bg-emerald-400" :
+                                                assessment.clearanceRate >= 15 ? "bg-amber-500" : "bg-red-500"
+                                    )} />
+                                    <span className="text-xs font-bold text-foreground tracking-tight uppercase">Absorption Power</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                        assessment.clearanceRate >= 35 ? "bg-emerald-500/10 text-emerald-600" :
+                                            assessment.clearanceRate >= 25 ? "bg-emerald-400/10 text-emerald-600" :
+                                                assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
+                                    )}>
+                                        {assessment.clearanceRate >= 35 ? "FLUSHING" :
+                                            assessment.clearanceRate >= 25 ? "CLEAN" :
+                                                assessment.clearanceRate >= 15 ? "SLUGGISH" : "LOCKED"}
+                                    </span>
+                                    <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{assessment.clearanceRate}%</span>
+                                </div>
+                            </div>
                         </div>
 
                         <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
-                            Detects autonomic tremors and recharge deficits.
+                            Links autonomic recharge to Load Memory clearance.
                             <span className="block mt-1 font-medium text-foreground/70">
-                                &ldquo;Phantom Energy&rdquo;: You may have the capacity to move, but not the &ldquo;permission&rdquo; to replenish.
+                                &ldquo;Absorption Power&rdquo;: Determines how fast yours system drains the reservoir. If &ldquo;Locked,&rdquo; load will stack even with low activity.
                             </span>
                         </p>
                     </div>

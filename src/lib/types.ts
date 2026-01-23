@@ -64,6 +64,7 @@ export interface DayAssessment {
     loadHistory: LoadMemoryPoint[];
     loadStatus: "Clear" | "Integrating" | "Saturated";
     loadTrend: "Rising" | "Plateau" | "Declining";
+    clearanceRate: number; // Percentage clearance power 0-100
     intensityReady: boolean;
     loadThreshold: number;
     ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";

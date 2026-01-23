@@ -27,9 +27,10 @@ function calculateLoadReservoir(
 ) {
     const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const targetIdx = sorted.findIndex(e => e.date === targetDate);
-    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const };
+    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const, clearanceRate: 0 };
 
     let reservoir = 0;
+    let lastClearanceRate = 0;
     const history: { date: string, value: number }[] = [];
 
     for (let i = 0; i <= targetIdx; i++) {
@@ -52,15 +53,24 @@ function calculateLoadReservoir(
 
         reservoir += contribution;
 
-        // 2. Determine Clearance Rate
-        // Simplified state detection for clearance rates
+        // 2. Determine Clearance Rate (Bio-Metabolic Absorption)
+        // High autonomic recharge (Oura Recovery) accelerates clearance
+        // Low recharge or subjective stress locks the reservoir
+        const rechargePwr = e.ouraRec ?? e.whoopRec ?? 70;
         const isStressed = (e.fatigue != null && e.fatigue >= 7) || (e.joint != null && e.joint >= 6);
 
-        let clearanceRate = 0.28; // Standard clearance
+        let clearanceRate = 0.28; // Standard Base
         if (mode === "adt") {
-            if (isStressed) clearanceRate = 0.08; // Dysregulated clearance is slow
-            else if (reservoir > 1.5) clearanceRate = 0.15; // Integration lag slows things down
+            if (rechargePwr >= 85 && !isStressed) {
+                clearanceRate = 0.40; // FLUSH: Optimal recharge
+            } else if (rechargePwr < 50 || isStressed) {
+                clearanceRate = 0.08; // LOCK: Impaired recharge
+            } else if (rechargePwr < 65 || reservoir > 1.8) {
+                clearanceRate = 0.18; // LAG: Sluggish clearance
+            }
         }
+
+        lastClearanceRate = clearanceRate;
 
         reservoir *= (1 - clearanceRate);
         reservoir = Math.max(0, reservoir);
@@ -89,7 +99,8 @@ function calculateLoadReservoir(
         currentLoad,
         history: history.slice(-10),
         status,
-        trend
+        trend,
+        clearanceRate: lastClearanceRate * 100 // Convert to percentage
     };
 }
 
@@ -313,7 +324,7 @@ export function computeDayAssessment(
     // --- PEM-Aware Load Reservoir ---
     const bSteps = base.steps?.mean || 9500;
     const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode);
-    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend } = reservoirResults;
+    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate } = reservoirResults;
 
     // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
     let cycleLabel = "";
@@ -525,7 +536,7 @@ export function computeDayAssessment(
         flags, voteResults, majority, statusPhase, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
-        crashStatus, loadMemory, loadHistory, loadStatus, loadTrend, intensityReady,
+        crashStatus, loadMemory, loadHistory, loadStatus, loadTrend, clearanceRate, intensityReady,
         loadThreshold: bSteps * 1.2,
         ouraHrvStatus: getOuraHrvStatus(), cycleLabel
     };
