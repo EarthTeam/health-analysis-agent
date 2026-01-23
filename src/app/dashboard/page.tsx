@@ -214,10 +214,14 @@ export default function DashboardPage() {
 
                             <div className="mb-4">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
+                                    <span className={cn(
+                                        "text-5xl font-black leading-none tracking-tighter transition-colors duration-500",
+                                        assessment.loadStatus === "Saturated" ? "text-red-500" :
+                                            assessment.loadStatus === "Integrating" ? "text-blue-500" : "text-emerald-500"
+                                    )}>
                                         {assessment.loadMemory.toFixed(2)}
                                     </span>
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reservoir Depth</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Accumulated Load</span>
                                 </div>
 
                                 {/* Reference Scale Bar */}
@@ -256,8 +260,9 @@ export default function DashboardPage() {
                                     <AreaChart data={assessment.loadHistory}>
                                         <defs>
                                             <linearGradient id="loadGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"} stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"} stopOpacity={0} />
+                                                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.6} />   {/* Saturated (Top) */}
+                                                <stop offset="30%" stopColor="#3b82f6" stopOpacity={0.4} />  {/* Integrating (Middle) */}
+                                                <stop offset="100%" stopColor="#10b981" stopOpacity={0.1} /> {/* Clear (Bottom) */}
                                             </linearGradient>
                                         </defs>
                                         <Tooltip
@@ -276,8 +281,9 @@ export default function DashboardPage() {
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            stroke={assessment.loadStatus === "Saturated" ? "#ef4444" : "#3b82f6"}
-                                            strokeWidth={3}
+                                            stroke={assessment.loadStatus === "Saturated" ? "#ef4444" :
+                                                assessment.loadStatus === "Integrating" ? "#3b82f6" : "#10b981"}
+                                            strokeWidth={4}
                                             fillOpacity={1}
                                             fill="url(#loadGradient)"
                                             isAnimationActive={true}
