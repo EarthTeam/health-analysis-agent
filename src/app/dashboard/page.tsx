@@ -44,11 +44,10 @@ export default function DashboardPage() {
         return window.map(entry => {
             const assess = computeDayAssessment(entry, entries, settings.baselineDays, settings.mode);
 
-            // Map majority state to numeric for graphing
-            let regulationVal = 50; // Neutral/Mixed
-            if (assess.majority === "ok") regulationVal = 100;
-            if (assess.majority === "stressed") regulationVal = 0;
-            if (assess.cycleLabel) regulationVal = 25; // Special value for Dip
+            // Map status phase to numeric for graphing
+            let regulationVal = 50; // INTEGRATION LAG
+            if (assess.statusPhase === "REGULATED") regulationVal = 100;
+            if (assess.statusPhase === "PRIMARY DYSREGULATION") regulationVal = 0;
 
             return {
                 date: entry.date.split("-").slice(1).join("/"), // MM/DD for compactness
@@ -317,21 +316,24 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 "h-3 w-3 rounded-full",
-                                assessment.cycleLabel ? "bg-amber-500" :
-                                    assessment.majority === "ok" ? "bg-emerald-500" :
-                                        assessment.majority === "stressed" ? "bg-red-500" :
-                                            "bg-amber-500"
+                                assessment.statusPhase === "REGULATED" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                                    assessment.statusPhase === "INTEGRATION LAG" ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" :
+                                        "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse"
                             )}></div>
                             <span className={cn(
                                 "text-2xl font-bold uppercase tracking-tight",
-                                assessment.cycleLabel ? "text-amber-500" :
-                                    assessment.majority === "ok" ? "text-emerald-500" :
-                                        assessment.majority === "stressed" ? "text-red-500" :
-                                            "text-amber-500"
+                                assessment.statusPhase === "REGULATED" ? "text-emerald-500" :
+                                    assessment.statusPhase === "INTEGRATION LAG" ? "text-blue-500" :
+                                        "text-red-500"
                             )}>
-                                {voteLabelFromAssess(assessment)}
+                                {assessment.statusPhase}
                             </span>
                         </div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 ml-6">
+                            {assessment.statusPhase === "REGULATED" ? "Capacity Online" :
+                                assessment.statusPhase === "INTEGRATION LAG" ? "Delayed Absorption Phase" :
+                                    "System Offline"}
+                        </p>
                     </div>
                     {/* Crash Signature Card */}
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
@@ -540,9 +542,8 @@ export default function DashboardPage() {
                             <defs>
                                 <linearGradient id="regulationGradient" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#10b981" />       {/* Green - Regulated (100) */}
-                                    <stop offset="50%" stopColor="#f59e0b" />      {/* Yellow - Transitional (50) */}
-                                    <stop offset="75%" stopColor="#f97316" />      {/* Orange - Dip (25) */}
-                                    <stop offset="100%" stopColor="#ef4444" />     {/* Red - Dysregulated (0) */}
+                                    <stop offset="50%" stopColor="#3b82f6" />      {/* Blue - Integration Lag (50) */}
+                                    <stop offset="100%" stopColor="#ef4444" />     {/* Red - Primary Dysregulation (0) */}
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
@@ -566,9 +567,8 @@ export default function DashboardPage() {
                                     if (name === "Regulation Status") {
                                         const val = Number(value);
                                         if (val >= 90) return ["REGULATED", name];
-                                        if (val >= 40) return ["TRANSITIONAL", name];
-                                        if (val >= 15) return ["POST-REG DIP", name];
-                                        return ["DYSREGULATED", name];
+                                        if (val >= 40) return ["INTEGRATION LAG", name];
+                                        return ["PRIMARY DYSREGULATION", name];
                                     }
                                     return [value, name];
                                 }}
@@ -595,9 +595,8 @@ export default function DashboardPage() {
                     </ResponsiveContainer>
                 </div>
                 <div className="mt-4 flex justify-between text-[10px] uppercase tracking-widest font-bold">
-                    <span className="text-red-500">Dysregulated (0)</span>
-                    <span className="text-orange-500">Post Reg Dip (25)</span>
-                    <span className="text-amber-500">Transitional (50)</span>
+                    <span className="text-red-500">Primary Dysregulation (0)</span>
+                    <span className="text-blue-500">Integration Lag (50)</span>
                     <span className="text-emerald-500">Regulated (100)</span>
                 </div>
             </div>

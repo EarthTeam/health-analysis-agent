@@ -37,11 +37,13 @@ export interface AppSettings {
 
 export type RecoveryState = "ok" | "stressed" | "neutral";
 export type RecColor = "Green" | "Yellow" | "Red";
+export type StatusPhase = "REGULATED" | "INTEGRATION LAG" | "PRIMARY DYSREGULATION";
 
 export interface DayAssessment {
     flags: OutlierFlag[];
     voteResults: { device: string; state: RecoveryState }[];
     majority: RecoveryState | "mixed";
+    statusPhase: StatusPhase;
     fatigueSignal: RecoveryState | "unknown";
     disagreement: boolean;
     fatigueMismatch: boolean;

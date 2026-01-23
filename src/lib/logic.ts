@@ -1,4 +1,4 @@
-import { DailyEntry, DayAssessment, OutlierFlag, RecoveryState, RecColor, AppSettings, BaselineStats } from "./types";
+import { DailyEntry, DayAssessment, OutlierFlag, RecoveryState, RecColor, StatusPhase, AppSettings, BaselineStats } from "./types";
 
 // --- Math Helpers ---
 export function mean(xs: (number | null)[]): number | null {
@@ -508,8 +508,21 @@ export function computeDayAssessment(
         return "Pay Attention";
     };
 
+    // --- 3-Phase Status Logic ---
+    let statusPhase: StatusPhase = "REGULATED";
+    const isSubjectiveCrash = (entry.fatigue != null && entry.fatigue >= 8) || (entry.joint != null && entry.joint >= 8);
+    const isPrimaryCrashed = (majority === "stressed" && (hrvLow || rhrHigh)) || crashStatus === "Crash-State" || crashStatus === "Crash-Onset";
+
+    if (isSubjectiveCrash || isPrimaryCrashed) {
+        statusPhase = "PRIMARY DYSREGULATION";
+    } else if (loadMemory > 0.8 || signalTension || majority === "mixed" || majority === "stressed" || cycleLabel) {
+        statusPhase = "INTEGRATION LAG";
+    } else {
+        statusPhase = "REGULATED";
+    }
+
     return {
-        flags, voteResults, majority, fatigueSignal, disagreement, fatigueMismatch,
+        flags, voteResults, majority, statusPhase, fatigueSignal, disagreement, fatigueMismatch,
         conf, oddOneOut: odd, oddWhy, rec, recText, why, plan,
         insight, fragilityType, signalTension, mantra, scoutCheck,
         crashStatus, loadMemory, loadHistory, loadStatus, loadTrend, intensityReady,
@@ -519,11 +532,7 @@ export function computeDayAssessment(
 }
 
 export function voteLabelFromAssess(assess: DayAssessment): string {
-    if (assess.cycleLabel) return "POST-REGULATION DIP";
-    if (assess.majority === "ok") return "REGULATED";
-    if (assess.majority === "mixed") return "TRANSITIONAL";
-    if (assess.majority === "stressed") return "DYSREGULATED";
-    return String(assess.majority || "").toUpperCase();
+    return assess.statusPhase;
 }
 
 function fmt(n: number | null | undefined, d = 0): string {

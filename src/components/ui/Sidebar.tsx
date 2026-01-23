@@ -23,7 +23,7 @@ export function Sidebar() {
                 </div>
                 <div>
                     <h1 className="font-bold text-lg leading-tight">Recovery<br />Agent</h1>
-                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md mt-1 inline-block">v2.11.0</span>
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md mt-1 inline-block">v2.11.1</span>
                 </div>
             </div>
 
