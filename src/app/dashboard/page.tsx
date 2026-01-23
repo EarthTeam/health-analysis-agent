@@ -204,10 +204,24 @@ export default function DashboardPage() {
                                         {assessment.loadStatus.toUpperCase()}
                                     </span>
                                     <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
-                                        {assessment.loadTrend === "Rising" && <TrendingUp className="w-3 h-3 text-red-500" />}
-                                        {assessment.loadTrend === "Declining" && <TrendingDown className="w-3 h-3 text-emerald-500" />}
-                                        {assessment.loadTrend === "Plateau" && <Minus className="w-3 h-3 text-blue-400" />}
-                                        {assessment.loadTrend}
+                                        {assessment.loadTrend === "Rising" && (
+                                            <>
+                                                <TrendingUp className="w-3 h-3 text-red-500" />
+                                                <span>Load Accumulating</span>
+                                            </>
+                                        )}
+                                        {assessment.loadTrend === "Declining" && (
+                                            <>
+                                                <TrendingDown className="w-3 h-3 text-emerald-500" />
+                                                <span>Load Clearing</span>
+                                            </>
+                                        )}
+                                        {assessment.loadTrend === "Plateau" && (
+                                            <>
+                                                <Minus className="w-3 h-3 text-blue-400" />
+                                                <span>Load Holding</span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
