@@ -5,7 +5,7 @@ import { computeDayAssessment, makeAnalysisBundle, voteLabelFromAssess } from "@
 import { useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X, Waves, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line, AreaChart, Area } from "recharts";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line, AreaChart, Area, ReferenceLine } from "recharts";
 
 export default function DashboardPage() {
     const { entries, settings } = useStore();
@@ -212,11 +212,42 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-baseline gap-2 mb-4">
-                                <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
-                                    {assessment.loadMemory.toFixed(2)}
-                                </span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reservoir Depth</span>
+                            <div className="mb-4">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl font-black text-foreground leading-none tracking-tighter">
+                                        {assessment.loadMemory.toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reservoir Depth</span>
+                                </div>
+
+                                {/* Reference Scale Bar */}
+                                <div className="mt-3 space-y-1">
+                                    <div className="w-full h-1.5 bg-secondary/30 rounded-full relative overflow-hidden">
+                                        <div
+                                            className={cn(
+                                                "h-full transition-all duration-1000",
+                                                assessment.loadStatus === "Saturated" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]" :
+                                                    assessment.loadStatus === "Integrating" ? "bg-blue-500" : "bg-emerald-500"
+                                            )}
+                                            style={{ width: `${Math.min((assessment.loadMemory / 3.0) * 100, 100)}%` }}
+                                        />
+                                        {/* Markers for 0.8 and 2.5 */}
+                                        <div className="absolute left-[26.6%] top-0 w-px h-full bg-background/50" />
+                                        <div className="absolute left-[83.3%] top-0 w-px h-full bg-background/20" />
+                                    </div>
+                                    <div className="flex justify-between text-[8px] font-bold text-muted-foreground/50 uppercase tracking-tighter tabular-nums">
+                                        <span>0.0</span>
+                                        <div className="flex flex-col items-center -ml-4">
+                                            <div className="h-1 w-px bg-muted-foreground/30 mb-0.5" />
+                                            <span>0.8 Clear</span>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                            <div className="h-1 w-px bg-muted-foreground/30 mb-0.5" />
+                                            <span>2.5 Limit</span>
+                                        </div>
+                                        <span>3.0</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Reservoir Graph */}
@@ -250,6 +281,20 @@ export default function DashboardPage() {
                                             fillOpacity={1}
                                             fill="url(#loadGradient)"
                                             isAnimationActive={true}
+                                        />
+                                        <ReferenceLine
+                                            y={2.5}
+                                            stroke="#ef4444"
+                                            strokeDasharray="3 3"
+                                            strokeOpacity={0.5}
+                                            label={{ position: 'right', value: 'LIMIT', fill: '#ef4444', fontSize: 8, fontWeight: 'bold' }}
+                                        />
+                                        <ReferenceLine
+                                            y={0.8}
+                                            stroke="#3b82f6"
+                                            strokeDasharray="3 3"
+                                            strokeOpacity={0.3}
+                                            label={{ position: 'right', value: 'CLEAR', fill: '#3b82f6', fontSize: 8, fontWeight: 'bold' }}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
