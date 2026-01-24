@@ -109,18 +109,18 @@ function calculateLoadReservoir(
 function getThresholds(mode: "standard" | "adt") {
     if (mode === "adt") {
         return {
-            zOutlier: 1.6,
+            zOutlier: 1.8,         // Increased from 1.6 to prevent over-sensitivity to historic windows
             rhrAbs: 6,
             hrvDropPct: 0.18,
             recDropAbs: 10,
             fatigueHigh: 6,
             fatigueLow: 4,
             jointWarn: 4,
-            disagreementPenalty: 25,
-            outlierPenalty: 25,
-            fatigueMismatchPenalty: 25,
+            disagreementPenalty: 20, // Reduced from 25
+            outlierPenalty: 15,      // Reduced from 25 to prevent single-outlier Red flips
+            fatigueMismatchPenalty: 20,
             trainingPenalty: 10,
-            stepsSwingPenalty: 10,
+            stepsSwingPenalty: 8,
         };
     }
     return {
