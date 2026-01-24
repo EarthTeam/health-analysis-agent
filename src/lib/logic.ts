@@ -62,12 +62,14 @@ function calculateLoadReservoir(
 
         let clearanceRate = 0.28; // Standard Base
         if (mode === "adt") {
-            if (rechargePwr >= 85 && !isStressed) {
-                clearanceRate = 0.40; // FLUSH: Optimal recharge
+            if (reservoir > 3.0 || rechargePwr < 35) {
+                clearanceRate = 0.03; // DEEP LOCK: Severe saturation or autonomic collapse
             } else if (rechargePwr < 50 || isStressed) {
-                clearanceRate = 0.08; // LOCK: Impaired recharge
+                clearanceRate = 0.08; // LOCKED: Impaired recharge
             } else if (rechargePwr < 65 || reservoir > 1.8) {
                 clearanceRate = 0.18; // LAG: Sluggish clearance
+            } else if (rechargePwr >= 85 && !isStressed) {
+                clearanceRate = 0.40; // FLUSH: Optimal recharge
             }
         }
 

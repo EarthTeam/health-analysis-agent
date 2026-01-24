@@ -385,7 +385,8 @@ export default function DashboardPage() {
                                             "w-2 h-2 rounded-full",
                                             assessment.clearanceRate >= 35 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
                                                 assessment.clearanceRate >= 25 ? "bg-emerald-400" :
-                                                    assessment.clearanceRate >= 15 ? "bg-amber-500" : "bg-red-500"
+                                                    assessment.clearanceRate >= 15 ? "bg-amber-500" :
+                                                        assessment.clearanceRate >= 5 ? "bg-red-500" : "bg-red-700 animate-pulse"
                                         )} />
                                         <span className="text-xs font-bold text-foreground tracking-tight uppercase">Absorption Power</span>
                                     </div>
@@ -394,11 +395,13 @@ export default function DashboardPage() {
                                             "text-[10px] font-bold px-1.5 py-0.5 rounded",
                                             assessment.clearanceRate >= 35 ? "bg-emerald-500/10 text-emerald-600" :
                                                 assessment.clearanceRate >= 25 ? "bg-emerald-400/10 text-emerald-600" :
-                                                    assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
+                                                    assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" :
+                                                        assessment.clearanceRate >= 5 ? "bg-red-500/10 text-red-600" : "bg-red-900/20 text-red-700"
                                         )}>
                                             {assessment.clearanceRate >= 35 ? "FLUSHING" :
                                                 assessment.clearanceRate >= 25 ? "CLEAN" :
-                                                    assessment.clearanceRate >= 15 ? "SLUGGISH" : "LOCKED"}
+                                                    assessment.clearanceRate >= 15 ? "SLUGGISH" :
+                                                        assessment.clearanceRate >= 5 ? "LOCKED" : "DEEP LOCK"}
                                         </span>
                                         <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{assessment.clearanceRate}%</span>
                                     </div>
