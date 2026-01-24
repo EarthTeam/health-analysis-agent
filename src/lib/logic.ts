@@ -40,41 +40,41 @@ function calculateLoadReservoir(
         // 1. Calculate Today's Contribution
         let contribution = 0;
         const steps = e.steps || 0;
-        if (baselineSteps > 0) {
-            const ratio = steps / baselineSteps;
-            if (ratio > 1.0) {
-                // Significant steps above baseline add load
-                contribution += (ratio - 1.0) * 2.0;
-            }
+
+        // Use a floor for baseline steps to prevent "Sensitivity Explosion" when resting
+        const effectiveBaseline = Math.max(baselineSteps, 4000);
+
+        const ratio = steps / effectiveBaseline;
+        if (ratio > 1.2) {
+            // Only add load if significantly above an already-reasonable baseline floor
+            contribution += (ratio - 1.2) * 1.5;
         }
 
-        if (steps > 9500) contribution += 0.5;
+        if (steps > 9500) contribution += 0.3;
         if (e.resistance === "Y") contribution += 0.4;
-        if (e.notes?.toLowerCase().includes("hill")) contribution += 0.6;
+        if (e.notes?.toLowerCase().includes("hill")) contribution += 0.5;
 
         reservoir += contribution;
 
         // 2. Determine Clearance Rate (Bio-Metabolic Absorption)
-        // High autonomic recharge (Oura Recovery) accelerates clearance
-        // Low recharge or subjective stress locks the reservoir
         const rechargePwr = e.ouraRec ?? e.whoopRec ?? 70;
         const isStressed = (e.fatigue != null && e.fatigue >= 7) || (e.joint != null && e.joint >= 6);
 
-        let clearanceRate = 0.28; // Standard Base
+        let clearanceRate = 0.32; // Increased base clearance (was 0.28)
         if (mode === "adt") {
             if (rechargePwr >= 85 && !isStressed) {
-                clearanceRate = 0.40; // FLUSH: Optimal recharge
+                clearanceRate = 0.45; // Enhanced flush
             } else if (rechargePwr < 50 || isStressed) {
-                clearanceRate = 0.08; // LOCK: Impaired recharge
-            } else if (rechargePwr < 65 || reservoir > 1.8) {
-                clearanceRate = 0.18; // LAG: Sluggish clearance
+                clearanceRate = 0.12; // Increased floor for "Locked" (was 0.08)
+            } else if (rechargePwr < 65 || reservoir > 2.0) {
+                clearanceRate = 0.22; // Faster lag clearing
             }
         }
 
         lastClearanceRate = clearanceRate;
 
         reservoir *= (1 - clearanceRate);
-        reservoir = Math.max(0, reservoir);
+        reservoir = Math.max(0, Math.min(reservoir, 4.0)); // CAP AT 4.0 to prevent infinite climb
 
         history.push({ date: e.date, value: Number(reservoir.toFixed(2)) });
     }
