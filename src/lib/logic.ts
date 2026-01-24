@@ -23,7 +23,8 @@ function calculateLoadReservoir(
     entries: DailyEntry[],
     targetDate: string,
     baselineSteps: number,
-    mode: "standard" | "adt"
+    mode: "standard" | "adt",
+    historyWindow: number = 10
 ) {
     const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const targetIdx = sorted.findIndex(e => e.date === targetDate);
@@ -97,7 +98,7 @@ function calculateLoadReservoir(
 
     return {
         currentLoad,
-        history: history.slice(-10),
+        history: history.slice(-historyWindow),
         status,
         trend,
         clearanceRate: lastClearanceRate * 100 // Convert to percentage
@@ -323,7 +324,7 @@ export function computeDayAssessment(
 
     // --- PEM-Aware Load Reservoir ---
     const bSteps = base.steps?.mean || 9500;
-    const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode);
+    const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode, baselineDays);
     const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate } = reservoirResults;
 
     // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
