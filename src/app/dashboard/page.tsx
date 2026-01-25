@@ -490,7 +490,7 @@ export default function DashboardPage() {
                                     assessment.crashStatus === "Crash-State" ? "bg-red-500 text-white border-red-600" :
                                         assessment.crashStatus === "Crash-Onset" ? "bg-red-100 text-red-700 border-red-200" :
                                             assessment.crashStatus === "Pre-Crash" ? "bg-orange-100 text-orange-700 border-orange-200" :
-                                                assessment.crashStatus === "Vulnerable" ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                assessment.crashStatus === "Load-Integrating" ? "bg-amber-100 text-amber-700 border-amber-200" :
                                                     "bg-emerald-100 text-emerald-700 border-emerald-200"
                                 )}>
                                     {assessment.cycleLabel ? assessment.cycleLabel.toUpperCase() :
@@ -524,7 +524,7 @@ export default function DashboardPage() {
                             ) : (
                                 <p className="text-sm font-medium text-foreground leading-snug">
                                     {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
-                                    {assessment.crashStatus === "Vulnerable" && "Reduced margin. System absorbing load more slowly."}
+                                    {assessment.crashStatus === "Load-Integrating" && "Load still integrating. System capacity is returning but not yet fully cleared."}
                                     {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
                                     {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
                                     {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
@@ -533,7 +533,7 @@ export default function DashboardPage() {
 
                             <div className="flex gap-1 h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
                                 <div className={cn("h-full flex-1 transition-all", assessment.crashStatus !== "Stable" ? "bg-emerald-500" : "bg-emerald-200 opacity-20")} />
-                                <div className={cn("h-full flex-1 transition-all", ["Vulnerable", "Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-amber-500" : "bg-secondary")} />
+                                <div className={cn("h-full flex-1 transition-all", ["Load-Integrating", "Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-amber-500" : "bg-secondary")} />
                                 <div className={cn("h-full flex-1 transition-all", ["Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-orange-500" : "bg-secondary")} />
                                 <div className={cn("h-full flex-1 transition-all", ["Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-red-500" : "bg-secondary")} />
                                 <div className={cn("h-full flex-1 transition-all", assessment.crashStatus === "Crash-State" ? "bg-red-700" : "bg-secondary")} />

@@ -493,11 +493,11 @@ export function computeDayAssessment(
         if (currentScore < prevScore) finalScore = Math.max(currentScore, prevScore - 0.5);
     }
 
-    let crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State" = "Stable";
+    let crashStatus: "Stable" | "Load-Integrating" | "Pre-Crash" | "Crash-Onset" | "Crash-State" = "Stable";
     if (finalScore >= 5 || (majority === "stressed" && fatigueSignal === "stressed")) crashStatus = "Crash-State";
     else if (finalScore >= 4) crashStatus = "Crash-Onset";
     else if (finalScore >= 2.5) crashStatus = "Pre-Crash";
-    else if (finalScore >= 1) crashStatus = "Vulnerable";
+    else if (finalScore >= 1) crashStatus = "Load-Integrating";
 
     const intensityReady = loadMemory < 0.5 && crashStatus === "Stable" && !signalTension && majority === "ok";
 

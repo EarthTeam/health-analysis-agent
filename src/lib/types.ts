@@ -59,7 +59,7 @@ export interface DayAssessment {
     signalTension: boolean;
     mantra: string;
     scoutCheck: string;
-    crashStatus: "Stable" | "Vulnerable" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
+    crashStatus: "Stable" | "Load-Integrating" | "Pre-Crash" | "Crash-Onset" | "Crash-State";
     loadMemory: number;
     loadHistory: LoadMemoryPoint[];
     loadStatus: "Clear" | "Integrating" | "Saturated";
