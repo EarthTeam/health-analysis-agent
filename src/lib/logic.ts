@@ -178,27 +178,34 @@ function outlierFlags(
     t: ReturnType<typeof getThresholds>
 ): OutlierFlag[] {
     const flags: OutlierFlag[] = [];
-    const zflag = (field: keyof DailyEntry, hintLabel: string) => {
+    const zflag = (field: keyof DailyEntry, hintLabel: string, direction: "low" | "high" | "both" = "both") => {
         const b = base[field];
         const val = (entry as any)[field] as number | null;
         if (!b || b.mean == null || val == null) return;
         if (!b.sd || b.sd === 0) return;
         const z = (val - b.mean) / b.sd;
-        if (Math.abs(z) >= t.zOutlier) flags.push({ field, kind: "z", z, hint: hintLabel });
+
+        let isOutlier = false;
+        if (direction === "low") isOutlier = z <= -t.zOutlier;
+        else if (direction === "high") isOutlier = z >= t.zOutlier;
+        else isOutlier = Math.abs(z) >= t.zOutlier;
+
+        if (isOutlier) flags.push({ field, kind: "z", z, hint: hintLabel });
     };
 
-    zflag("mReady", "Readiness");
-    zflag("mHrv", "HRV");
-    zflag("ouraRec", "Recovery");
-    zflag("whoopRec", "Recovery");
-    zflag("whoopRhr", "RHR");
-    zflag("ouraRhr", "RHR");
+    zflag("mReady", "Readiness", "low");
+    zflag("mHrv", "HRV", "low");
+    zflag("ouraRec", "Recovery", "low");
+    zflag("whoopRec", "Recovery", "low");
+    zflag("whoopRhr", "RHR", "high");
+    zflag("ouraRhr", "RHR", "high");
 
     const isToday = entry.date === new Date().toISOString().slice(0, 10);
     if (!(isToday && (entry.steps === 0 || entry.steps == null))) {
-        zflag("steps", "Steps");
+        zflag("steps", "Steps", "high"); // Only high steps are a "load" outlier
     }
-    zflag("fatigue", "Fatigue");
+    zflag("fatigue", "Fatigue", "high");
+    zflag("joint", "Joints", "high");
 
     if (base.whoopRhr?.mean != null && entry.whoopRhr != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs)
         flags.push({ field: "whoopRhr", kind: "abs", hint: `Whoop RHR +${t.rhrAbs} bpm vs baseline` });
@@ -382,16 +389,36 @@ export function computeDayAssessment(
     let recText = "";
     const plan: string[] = [];
 
+    const diurnalKeywords = ["lifted", "after 1 hour", "after an hour", "rebound", "cleared quickly", "evening good", "energy good in the evening"];
+    const hasDiurnalRebound = diurnalKeywords.some(k => entry.notes?.toLowerCase().includes(k));
+    const stellarRecovery = (majority === "ok" && okCount >= 2);
+    const lowLoad = loadMemory < 0.75;
+
     if (rec === "Green") {
         recText = `Maintain Rhythm — Go Wolf`;
         plan.push("Maintain rhythm: walk naturally; hills allowed if they feel good.");
         plan.push("Strength work only if it improves symptoms.");
     } else if (rec === "Yellow") {
-        recText = `Modulate & Observe — Stay in Motion`;
-        plan.push("Modulate: keep the walk easy/conversational; avoid 'testing' the system.");
-        plan.push("Reassess after ~3–5 pm before adding intensity.");
+        if (mode === "adt" && hasDiurnalRebound && stellarRecovery && lowLoad) {
+            recText = `Regulated — Stay in Motion (No Testing)`;
+            plan.push("Trust the rebound: maintain normal walking rhythm.");
+            plan.push("Hills acceptable if pace remains conversational.");
+            plan.push("Avoid intensity experiments; stay regulated.");
+        } else {
+            recText = `Modulate & Observe — Stay in Motion`;
+            plan.push("Modulate: keep the walk easy/conversational; avoid 'testing' the system.");
+            plan.push("Reassess after ~3–5 pm before adding intensity.");
+        }
     } else {
-        if (cycleLabel) {
+        // Red state
+        if (mode === "adt" && hasDiurnalRebound && stellarRecovery && lowLoad) {
+            // Override RED if everything else is actually outstanding but notes were messy
+            rec = "Yellow";
+            recText = `Regulated — Stay in Motion (Rebound)`;
+            why.push("Rapid diurnal rebound: Morning heaviness lifted quickly; metrics are outstanding.");
+            plan.push("Trust the rebound: keep the walk easy and rhythmic.");
+            plan.push("Avoid intensity, but movement is safe and recommended.");
+        } else if (cycleLabel) {
             recText = `Morning Protection — Scout`;
             plan.push("Morning protection: keep the morning gentle.");
             plan.push("Short, easy walk only if it lightens heaviness.");
@@ -438,7 +465,10 @@ export function computeDayAssessment(
     const rhrHigh = (entry.ouraRhr != null && base.ouraRhr?.mean != null && (entry.ouraRhr - base.ouraRhr.mean) >= t.rhrAbs) ||
         (entry.whoopRhr != null && base.whoopRhr?.mean != null && (entry.whoopRhr - base.whoopRhr.mean) >= t.rhrAbs);
 
-    if (majority === "stressed" && (hrvLow || rhrHigh || (entry.fatigue != null && entry.fatigue >= 8))) {
+    if (hasDiurnalRebound && stellarRecovery && lowLoad) {
+        mantra = "Integration Completed: Rapid diurnal rebound confirmed. System has regulated.";
+        scoutCheck = "Notice the shift: the morning heaviness was integration work completing.";
+    } else if (majority === "stressed" && (hrvLow || rhrHigh || (entry.fatigue != null && entry.fatigue >= 8))) {
         fragilityType = "Global";
         mantra = "Autonomic Reset: Systemic crash signature detected. Protection is mandatory today.";
         scoutCheck = "Notice any dizziness or heart racing: stay strictly within the lowest effort zones.";
@@ -527,6 +557,8 @@ export function computeDayAssessment(
 
     if (isSubjectiveCrash || isPrimaryCrashed) {
         statusPhase = "PRIMARY DYSREGULATION";
+    } else if (hasDiurnalRebound && stellarRecovery && lowLoad) {
+        statusPhase = "REGULATED"; // Override if rebound occurred
     } else if (loadMemory > 0.8 || signalTension || majority === "mixed" || majority === "stressed" || cycleLabel) {
         statusPhase = "INTEGRATION LAG";
     } else {
