@@ -460,13 +460,14 @@ export default function DashboardPage() {
                                         assessment.fragilityType === "Integration Lag" ? "text-orange-500" :
                                             assessment.fragilityType === "Recovering" ? "text-blue-500" : "text-emerald-500"
                                 )}>
-                                    {assessment.fragilityType === "None" ? "Stable" : assessment.fragilityType}
+                                    {assessment.fragilityType === "None" ? "Stable" :
+                                        assessment.fragilityType === "Recovering" ? "Rebuilding" : assessment.fragilityType}
                                 </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                                 {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
                                     assessment.fragilityType === "Integration Lag" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
-                                        assessment.fragilityType === "Recovering" ? "A crash signature is still clearing. System capacity is returning but vulnerable." :
+                                        assessment.fragilityType === "Recovering" ? "Capacity is returning as recent load finishes integrating. System is stable and prioritizing final clearance." :
                                             "System is harmonized. Safe to build durability."}
                             </p>
                         </div>
