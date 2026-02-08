@@ -71,6 +71,7 @@ export interface DayAssessment {
     cycleLabel?: string;
     clearanceStatus: "Clearing" | "Cleared" | "None";
     approachingCapacity: boolean;
+    crashScore: number;
 }
 
 export interface OutlierFlag {

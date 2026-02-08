@@ -383,15 +383,15 @@ export default function DashboardPage() {
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
                                     <div className="flex items-center gap-2">
-                                        <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 60 ? "bg-amber-500" : "bg-emerald-500")} />
+                                        <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 50 ? "bg-red-500" : (latest.ouraRec || 0) < 70 ? "bg-amber-500" : "bg-emerald-500")} />
                                         <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recharge Status</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
                                             "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                            (latest.ouraRec || 0) < 60 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                                            (latest.ouraRec || 0) < 50 ? "bg-red-500/10 text-red-600" : (latest.ouraRec || 0) < 70 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
                                         )}>
-                                            {(latest.ouraRec || 0) < 60 ? "LOCKED/SATURATED" : "CLEARING LOAD"}
+                                            {(latest.ouraRec || 0) < 50 ? "LOCKED" : (latest.ouraRec || 0) < 70 ? "CONSTRAINED" : "OPTIMAL RECHARGE"}
                                         </span>
                                         <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{(latest.ouraRec || 0)}%</span>
                                     </div>
@@ -426,18 +426,18 @@ export default function DashboardPage() {
                                                 assessment.clearanceRate >= 25 ? "bg-emerald-400" :
                                                     assessment.clearanceRate >= 15 ? "bg-amber-500" : "bg-red-500"
                                         )} />
-                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Absorption Power</span>
+                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Load Clearance Velocity</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
                                             "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                            assessment.clearanceRate >= 35 ? "bg-emerald-500/10 text-emerald-600" :
-                                                assessment.clearanceRate >= 25 ? "bg-emerald-400/10 text-emerald-600" :
-                                                    assessment.clearanceRate >= 15 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
+                                            assessment.clearanceRate >= 40 ? "bg-emerald-500/10 text-emerald-600" :
+                                                assessment.clearanceRate >= 30 ? "bg-emerald-400/10 text-emerald-600" :
+                                                    assessment.clearanceRate >= 20 ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-600"
                                         )}>
-                                            {assessment.clearanceRate >= 35 ? "FLUSHING" :
-                                                assessment.clearanceRate >= 25 ? "CLEAN" :
-                                                    assessment.clearanceRate >= 15 ? "SLUGGISH" : "LOCKED"}
+                                            {assessment.clearanceRate >= 40 ? "ENHANCED" :
+                                                assessment.clearanceRate >= 30 ? "HEALTHY" :
+                                                    assessment.clearanceRate >= 20 ? "SLUGGISH" : "LOCKED"}
                                         </span>
                                         <span className="text-xs font-mono font-bold text-muted-foreground pr-1">{assessment.clearanceRate}%</span>
                                     </div>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
                             <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed italic border-t border-border pt-2">
                                 Links autonomic recharge to Load Memory clearance.
                                 <span className="block mt-1 font-medium text-foreground/70">
-                                    &ldquo;Absorption Power&rdquo;: Determines how fast yours system drains the reservoir. If &ldquo;Locked,&rdquo; load will stack even with low activity.
+                                    &ldquo;Load Clearance Velocity&rdquo;: The daily speed at which your body drains the reservoir. <strong>{assessment.clearanceRate}%</strong> means your system clears that portion of the total unintegrated load every 24 hours.
                                 </span>
                             </p>
                         </div>
@@ -571,12 +571,39 @@ export default function DashboardPage() {
                                 </p>
                             )}
 
-                            <div className="flex gap-1 h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
-                                <div className={cn("h-full flex-1 transition-all", assessment.crashStatus !== "Stable" ? "bg-emerald-500" : "bg-emerald-200 opacity-20")} />
-                                <div className={cn("h-full flex-1 transition-all", ["Load-Integrating", "Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-amber-500" : "bg-secondary")} />
-                                <div className={cn("h-full flex-1 transition-all", ["Pre-Crash", "Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-orange-500" : "bg-secondary")} />
-                                <div className={cn("h-full flex-1 transition-all", ["Crash-Onset", "Crash-State"].includes(assessment.crashStatus) ? "bg-red-500" : "bg-secondary")} />
-                                <div className={cn("h-full flex-1 transition-all", assessment.crashStatus === "Crash-State" ? "bg-red-700" : "bg-secondary")} />
+                            <div className="pt-4 space-y-3 border-t border-border/50">
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crash Risk Score</span>
+                                        <span className="text-[10px] font-mono font-bold text-foreground">{assessment.crashScore.toFixed(1)} / 5.0</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden flex">
+                                        <div
+                                            className={cn(
+                                                "h-full transition-all duration-500",
+                                                assessment.crashScore >= 4 ? "bg-red-500" :
+                                                    assessment.crashScore >= 2.5 ? "bg-orange-500" :
+                                                        assessment.crashScore >= 1 ? "bg-amber-500" : "bg-emerald-500"
+                                            )}
+                                            style={{ width: `${Math.min(100, (assessment.crashScore / 5) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Clearance Proximity</span>
+                                        <span className="text-[10px] font-mono font-bold text-foreground">
+                                            {assessment.loadMemory <= 0.15 ? "CLEARED" : `${Math.max(0, assessment.loadMemory - 0.15).toFixed(2)} units to go`}
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-blue-500 transition-all duration-500"
+                                            style={{ width: `${Math.max(0, Math.min(100, (1 - (assessment.loadMemory / 0.8)) * 100))}%` }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                         </div>

@@ -662,7 +662,8 @@ export function computeDayAssessment(
         loadThreshold: bSteps * 1.2,
         ouraHrvStatus: getOuraHrvStatus(), cycleLabel,
         clearanceStatus,
-        approachingCapacity
+        approachingCapacity,
+        crashScore: finalScore
     };
 }
 
