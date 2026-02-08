@@ -206,6 +206,96 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
+                    {/* Crash Signature Card */}
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Crash Signature</h3>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className={cn(
+                                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
+                                    assessment.crashStatus === "Crash-State" ? "bg-red-500 text-white border-red-600" :
+                                        assessment.crashStatus === "Crash-Onset" ? "bg-red-100 text-red-700 border-red-200" :
+                                            assessment.crashStatus === "Pre-Crash" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                                                assessment.crashStatus === "Load-Integrating" ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                    "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                )}>
+                                    {assessment.cycleLabel ? assessment.cycleLabel.toUpperCase() :
+                                        (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
+                                </div>
+                            </div>
+
+                            {assessment.cycleLabel === "Post-regulation dip" ? (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-bold text-foreground leading-snug">
+                                        The system has capacity, but neuro-energy hasn&apos;t come online yet.
+                                    </p>
+                                    <ul className="space-y-1">
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Wake-state snapshot stable (Morpheus)</span>
+                                        </li>
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Neuro-energy not yet online (fatigue + morning flatness)</span>
+                                        </li>
+                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                            <span>Recent load present (2 higher-step days)</span>
+                                        </li>
+                                    </ul>
+                                    <p className="text-[10px] italic text-muted-foreground border-t border-border pt-1.5 mt-2">
+                                        Capacity is present, but protection is needed until neuro-energy comes online.
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-sm font-medium text-foreground leading-snug">
+                                    {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
+                                    {assessment.crashStatus === "Load-Integrating" && "Load still integrating. System capacity is returning but not yet fully cleared."}
+                                    {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
+                                    {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
+                                    {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
+                                </p>
+                            )}
+
+                            <div className="pt-4 space-y-3 border-t border-border/50">
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crash Risk Score</span>
+                                        <span className="text-[10px] font-mono font-bold text-foreground">{assessment.crashScore.toFixed(1)} / 5.0</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden flex">
+                                        <div
+                                            className={cn(
+                                                "h-full transition-all duration-500",
+                                                assessment.crashScore >= 4 ? "bg-red-500" :
+                                                    assessment.crashScore >= 2.5 ? "bg-orange-500" :
+                                                        assessment.crashScore >= 1 ? "bg-amber-500" : "bg-emerald-500"
+                                            )}
+                                            style={{ width: `${Math.min(100, (assessment.crashScore / 5) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Clearance Proximity</span>
+                                        <span className="text-[10px] font-mono font-bold text-foreground">
+                                            {assessment.loadMemory <= 0.15 ? "CLEARED" : `${Math.max(0, assessment.loadMemory - 0.15).toFixed(2)} units to go`}
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-blue-500 transition-all duration-500"
+                                            style={{ width: `${Math.max(0, Math.min(100, (1 - (assessment.loadMemory / 0.8)) * 100))}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                     {/* Secondary Metrics Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Load Memory Card */}
@@ -517,95 +607,6 @@ export default function DashboardPage() {
                                 <span className="text-xs font-mono font-bold text-foreground/80">{assessment.loadThreshold.toLocaleString()} steps</span>
                             </div>
                             <div className="text-[9px] text-muted-foreground italic">Personalized based on 1.2x baseline mean</div>
-                        </div>
-                    </div>
-                    {/* Crash Signature Card */}
-                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Crash Signature</h3>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className={cn(
-                                    "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border",
-                                    assessment.crashStatus === "Crash-State" ? "bg-red-500 text-white border-red-600" :
-                                        assessment.crashStatus === "Crash-Onset" ? "bg-red-100 text-red-700 border-red-200" :
-                                            assessment.crashStatus === "Pre-Crash" ? "bg-orange-100 text-orange-700 border-orange-200" :
-                                                assessment.crashStatus === "Load-Integrating" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                                                    "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                )}>
-                                    {assessment.cycleLabel ? assessment.cycleLabel.toUpperCase() :
-                                        (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
-                                </div>
-                            </div>
-
-                            {assessment.cycleLabel === "Post-regulation dip" ? (
-                                <div className="space-y-2">
-                                    <p className="text-sm font-bold text-foreground leading-snug">
-                                        The system has capacity, but neuro-energy hasn&apos;t come online yet.
-                                    </p>
-                                    <ul className="space-y-1">
-                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                                            <div className="w-1 h-1 rounded-full bg-primary" />
-                                            <span>Wake-state snapshot stable (Morpheus)</span>
-                                        </li>
-                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                                            <div className="w-1 h-1 rounded-full bg-primary" />
-                                            <span>Neuro-energy not yet online (fatigue + morning flatness)</span>
-                                        </li>
-                                        <li className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                                            <div className="w-1 h-1 rounded-full bg-primary" />
-                                            <span>Recent load present (2 higher-step days)</span>
-                                        </li>
-                                    </ul>
-                                    <p className="text-[10px] italic text-muted-foreground border-t border-border pt-1.5 mt-2">
-                                        Capacity is present, but protection is needed until neuro-energy comes online.
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="text-sm font-medium text-foreground leading-snug">
-                                    {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
-                                    {assessment.crashStatus === "Load-Integrating" && "Load still integrating. System capacity is returning but not yet fully cleared."}
-                                    {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
-                                    {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
-                                    {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
-                                </p>
-                            )}
-
-                            <div className="pt-4 space-y-3 border-t border-border/50">
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crash Risk Score</span>
-                                        <span className="text-[10px] font-mono font-bold text-foreground">{assessment.crashScore.toFixed(1)} / 5.0</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden flex">
-                                        <div
-                                            className={cn(
-                                                "h-full transition-all duration-500",
-                                                assessment.crashScore >= 4 ? "bg-red-500" :
-                                                    assessment.crashScore >= 2.5 ? "bg-orange-500" :
-                                                        assessment.crashScore >= 1 ? "bg-amber-500" : "bg-emerald-500"
-                                            )}
-                                            style={{ width: `${Math.min(100, (assessment.crashScore / 5) * 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Clearance Proximity</span>
-                                        <span className="text-[10px] font-mono font-bold text-foreground">
-                                            {assessment.loadMemory <= 0.15 ? "CLEARED" : `${Math.max(0, assessment.loadMemory - 0.15).toFixed(2)} units to go`}
-                                        </span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-secondary/30 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-blue-500 transition-all duration-500"
-                                            style={{ width: `${Math.max(0, Math.min(100, (1 - (assessment.loadMemory / 0.8)) * 100))}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
