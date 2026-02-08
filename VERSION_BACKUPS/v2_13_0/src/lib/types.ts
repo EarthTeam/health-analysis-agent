@@ -36,7 +36,7 @@ export interface AppSettings {
 }
 
 export type RecoveryState = "ok" | "stressed" | "neutral";
-export type RecColor = "Green" | "Yellow" | "Red" | "Blue" | "Teal";
+export type RecColor = "Green" | "Yellow" | "Red";
 export type StatusPhase = "REGULATED" | "INTEGRATION LAG" | "PRIMARY DYSREGULATION";
 
 export interface DayAssessment {
@@ -69,8 +69,6 @@ export interface DayAssessment {
     loadThreshold: number;
     ouraHrvStatus: "Optimal" | "Good" | "Fair" | "Pay Attention" | "Unknown";
     cycleLabel?: string;
-    clearanceStatus: "Clearing" | "Cleared" | "None";
-    approachingCapacity: boolean;
 }
 
 export interface OutlierFlag {

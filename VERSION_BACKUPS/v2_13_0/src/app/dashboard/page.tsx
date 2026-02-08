@@ -3,7 +3,7 @@
 import { useStore } from "@/lib/store";
 import { computeDayAssessment, makeAnalysisBundle, voteLabelFromAssess } from "@/lib/logic";
 import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X, Waves, TrendingUp, TrendingDown, Minus, RefreshCcw, Eye } from "lucide-react";
+import { AlertCircle, CheckCircle2, AlertTriangle, Copy, Activity, Calendar, ChevronLeft, ChevronRight, X, Waves, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line, AreaChart, Area, ReferenceLine } from "recharts";
 
@@ -106,26 +106,7 @@ export default function DashboardPage() {
                         <div className={cn("absolute top-0 left-0 w-1 h-full", ringBg)}></div>
                         <div className="flex items-start justify-between mb-6">
                             <div className="flex-1">
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-                                    Today&apos;s Strategy
-                                    {assessment.approachingCapacity && (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white animate-pulse border border-red-700 shadow-[0_0_12px_rgba(220,38,38,0.5)]">
-                                            APPROACHING CAPACITY
-                                        </span>
-                                    )}
-                                </h2>
-
-                                {assessment.approachingCapacity && (
-                                    <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl flex gap-3 items-center">
-                                        <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-                                        <div>
-                                            <h4 className="text-xs font-bold text-red-700 uppercase tracking-tight">Load Approaching Capacity</h4>
-                                            <p className="text-[11px] text-red-600 font-medium leading-relaxed">
-                                                Recent activity is nearing the system’s current integration limit. Capacity is present, but additional stacking may delay recovery.
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
+                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Strategy</h2>
 
                                 {/* Daily Mantra */}
                                 <div className="mt-3 mb-6">
@@ -219,28 +200,14 @@ export default function DashboardPage() {
                                     <p className="text-[10px] text-muted-foreground/60 italic font-medium">Unintegrated physiological work</p>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <div className="flex gap-2">
-                                        {assessment.clearanceStatus === "Cleared" && (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white border border-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)] flex items-center gap-1">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                CLEARED
-                                            </span>
-                                        )}
-                                        {assessment.clearanceStatus === "Clearing" && (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500 text-white border border-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.4)] flex items-center gap-1">
-                                                <RefreshCcw className="w-3 h-3" />
-                                                CLEARING
-                                            </span>
-                                        )}
-                                        <span className={cn(
-                                            "text-[10px] font-bold px-2 py-0.5 rounded-full select-none",
-                                            assessment.loadStatus === "Saturated" ? "bg-red-100 text-red-700 border border-red-200" :
-                                                assessment.loadStatus === "Integrating" ? "bg-blue-100 text-blue-700 border border-blue-200" :
-                                                    "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                                        )}>
-                                            {assessment.loadStatus.toUpperCase()}
-                                        </span>
-                                    </div>
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-2 py-0.5 rounded-full select-none",
+                                        assessment.loadStatus === "Saturated" ? "bg-red-100 text-red-700 border border-red-200" :
+                                            assessment.loadStatus === "Integrating" ? "bg-blue-100 text-blue-700 border border-blue-200" :
+                                                "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                    )}>
+                                        {assessment.loadStatus.toUpperCase()}
+                                    </span>
                                     <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
                                         {assessment.loadTrend === "Rising" && (
                                             <>
@@ -360,15 +327,14 @@ export default function DashboardPage() {
 
                             <div className="pt-4 border-t border-border mt-4">
                                 <p className="text-sm font-bold text-foreground mb-1 leading-tight">
-                                    {assessment.clearanceStatus === "Cleared" ? "Load Integrated — CLEAR" :
-                                        assessment.clearanceStatus === "Clearing" ? "Load Absorbing — CLEARING" :
-                                            assessment.approachingCapacity ? "Nearing System Limit" : "Load Stabilized"}
+                                    {assessment.loadStatus === "Clear" ? "System is Absorbing" :
+                                        assessment.loadStatus === "Integrating" ? "Processing Recent Load" :
+                                            "PEM Risk: System Saturated"}
                                 </p>
                                 <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                    {assessment.clearanceStatus === "Cleared" ? "Prior load has been integrated. The system is ready for cautious expansion." :
-                                        assessment.clearanceStatus === "Clearing" ? "Load is being actively absorbed. Symptoms may fluctuate while recovery is underway." :
-                                            assessment.approachingCapacity ? "Recent activity is nearing the system’s current integration limit. Capacity is present, but additional stacking may delay recovery." :
-                                                "Clearance is matched with load. Maintain rhythm to assist absorption."}
+                                    {assessment.loadStatus === "Clear" ? "Clearance exceeds new load. Safe to resume exploration." :
+                                        assessment.loadStatus === "Integrating" ? "Plateau: System is working through recent volume. Hold steady." :
+                                            "Rising: Load accumulating faster than absorption. Settle in and protect your baseline."}
                                 </p>
                             </div>
                         </div>
@@ -507,7 +473,7 @@ export default function DashboardPage() {
                                 {assessment.fragilityType === "Global" ? "Systemic crash signature. Full nervous system protection required." :
                                     assessment.fragilityType === "Integration Lag" ? "Structural lag. Engine is ready but recharge/tissues are tender." :
                                         assessment.fragilityType === "Recovering" ? "Capacity is returning as recent load finishes integrating. System is stable and prioritizing final clearance." :
-                                            "System is harmonized. Moving through consistent recovery cycles."}
+                                            "System is harmonized. Safe to build durability."}
                             </p>
                         </div>
 

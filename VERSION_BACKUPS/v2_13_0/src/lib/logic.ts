@@ -24,114 +24,64 @@ function calculateLoadReservoir(
     targetDate: string,
     baselineSteps: number,
     mode: "standard" | "adt",
-    historyWindow: number = 14
+    historyWindow: number = 10
 ) {
     const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const targetIdx = sorted.findIndex(e => e.date === targetDate);
-    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const, clearanceRate: 0, clearStreak: 0, approachingCapacity: false, clearanceStatus: "None" as const };
-
-    const mixedKeywords = ["social", "desk", "cognitive", "firewood", "carpentry", "mowing", "work", "meeting", "people", "zoom", "painting", "fixing", "repair", "tinkering"];
+    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const, clearanceRate: 0 };
 
     let reservoir = 0;
     let lastClearanceRate = 0;
-    const history: { date: string, value: number, approachingCapacity: boolean, fatigue: number | null, mReady: number | null, isImproved: boolean }[] = [];
+    const history: { date: string, value: number }[] = [];
 
     for (let i = 0; i <= targetIdx; i++) {
         const e = sorted[i];
+
+        // 1. Calculate Today's Contribution
         let contribution = 0;
         const steps = e.steps || 0;
-        const effectiveBaseline = Math.max(baselineSteps, 4000);
-        const ratio = steps / effectiveBaseline;
 
+        // Use a floor for baseline steps to prevent "Sensitivity Explosion" when resting
+        const effectiveBaseline = Math.max(baselineSteps, 4000);
+
+        const ratio = steps / effectiveBaseline;
         if (ratio > 1.2) {
+            // Only add load if significantly above an already-reasonable baseline floor
             contribution += (ratio - 1.2) * 1.5;
         }
 
         if (steps > 9500) contribution += 0.3;
         if (e.resistance === "Y") contribution += 0.4;
-
-        // Mixed load detection for reservoir contribution (slight increase)
-        const hasMixedLoad = mixedKeywords.some(k => e.notes?.toLowerCase().includes(k));
-        if (hasMixedLoad) contribution += 0.3;
         if (e.notes?.toLowerCase().includes("hill")) contribution += 0.5;
 
         reservoir += contribution;
 
+        // 2. Determine Clearance Rate (Bio-Metabolic Absorption)
         const rechargePwr = e.ouraRec ?? e.whoopRec ?? 70;
         const isStressed = (e.fatigue != null && e.fatigue >= 7) || (e.joint != null && e.joint >= 6);
 
-        let clearanceRate = 0.32;
+        let clearanceRate = 0.32; // Increased base clearance (was 0.28)
         if (mode === "adt") {
             if (rechargePwr >= 85 && !isStressed) {
-                clearanceRate = 0.45;
+                clearanceRate = 0.45; // Enhanced flush
             } else if (rechargePwr < 50 || isStressed) {
-                clearanceRate = 0.12;
+                clearanceRate = 0.12; // Increased floor for "Locked" (was 0.08)
             } else if (rechargePwr < 65 || reservoir > 2.0) {
-                clearanceRate = 0.22;
+                clearanceRate = 0.22; // Faster lag clearing
             }
         }
+
         lastClearanceRate = clearanceRate;
+
         reservoir *= (1 - clearanceRate);
-        reservoir = Math.max(0, Math.min(reservoir, 4.0));
+        reservoir = Math.max(0, Math.min(reservoir, 4.0)); // CAP AT 4.0 to prevent infinite climb
 
-        // --- Approaching Capacity Calculation (Historical) ---
-        let appCap = false;
-        // A. Step-based
-        if (steps >= 12000) appCap = true;
-        if (i >= 1 && steps >= 9000 && (sorted[i - 1].steps || 0) >= 9000) appCap = true;
-        if (i >= 3) {
-            const last4Steps = sorted.slice(i - 3, i + 1).map(x => x.steps || 0);
-            if (last4Steps.filter(s => s >= 8500).length >= 3) appCap = true;
-        }
-        // B. Mixed-load
-        if (steps >= 8000 && hasMixedLoad) appCap = true;
-
-        // C. Reservoir limit
-        if (reservoir > 2.2) appCap = true;
-
-        // --- Improvement Detection (for Cleared Badge) ---
-        // "Morning heaviness milder" (fatigue drop) OR "Regulation comes online" (diurnal notes)
-        const isImproved = (e.fatigue != null && i > 0 && sorted[i - 1].fatigue != null && e.fatigue < (sorted[i - 1].fatigue as number)) ||
-            e.notes?.toLowerCase().includes("rebound") || e.notes?.toLowerCase().includes("lifted");
-
-        history.push({
-            date: e.date,
-            value: Number(reservoir.toFixed(2)),
-            approachingCapacity: appCap,
-            fatigue: e.fatigue,
-            mReady: e.mReady,
-            isImproved: !!isImproved
-        });
+        history.push({ date: e.date, value: Number(reservoir.toFixed(2)) });
     }
 
     const currentLoad = history[history.length - 1].value;
-    const isApproaching = history[history.length - 1].approachingCapacity;
 
-    // --- Clearance Badge Logic ---
-    let clearanceStatus: "Clearing" | "Cleared" | "None" = "None";
-    if (currentLoad > 0.2 && !isApproaching) {
-        clearanceStatus = "Clearing";
-    }
-
-    if (currentLoad <= 0.15 && !isApproaching) {
-        // Check 48h history of appCap
-        const last48h = history.slice(Math.max(0, history.length - 3)); // Today, yesterday, day before
-        const noRecentFlags = last48h.every(h => !h.approachingCapacity);
-
-        // 2 consecutive days of improvement
-        const last2Improved = history.length >= 2 &&
-            history[history.length - 1].isImproved &&
-            history[history.length - 2].isImproved;
-
-        if (noRecentFlags && last2Improved) {
-            clearanceStatus = "Cleared";
-        } else if (noRecentFlags) {
-            // If no flags but not "consistently improved" yet, stay in Clearing or None
-            clearanceStatus = currentLoad > 0.05 ? "Clearing" : "None";
-        }
-    }
-
-    // Status mapping for UI
+    // Status mapping
     let status: "Clear" | "Integrating" | "Saturated" = "Clear";
     if (currentLoad > 2.5) status = "Saturated";
     else if (currentLoad > 0.8) status = "Integrating";
@@ -146,21 +96,12 @@ function calculateLoadReservoir(
         else if (diff < -0.1) trend = "Declining";
     }
 
-    let clearStreak = 0;
-    for (let i = history.length - 1; i >= 0; i--) {
-        if (history[i].value < 0.3) clearStreak++;
-        else break;
-    }
-
     return {
         currentLoad,
-        history: history.slice(-historyWindow).map(h => ({ date: h.date, value: h.value })),
+        history: history.slice(-historyWindow),
         status,
         trend,
-        clearanceRate: lastClearanceRate * 100,
-        clearStreak,
-        approachingCapacity: isApproaching,
-        clearanceStatus
+        clearanceRate: lastClearanceRate * 100 // Convert to percentage
     };
 }
 
@@ -405,7 +346,7 @@ export function computeDayAssessment(
     // --- PEM-Aware Load Reservoir ---
     const bSteps = base.steps?.mean || 9500;
     const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode, baselineDays);
-    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate, approachingCapacity, clearanceStatus } = reservoirResults;
+    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate } = reservoirResults;
 
     // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
     let cycleLabel = "";
@@ -458,11 +399,6 @@ export function computeDayAssessment(
     if (cycleLabel) why.push("Pattern suggests a post‑regulation dip: protect the morning and reassess later.");
     if (stepsMissing) why.push("Steps not yet entered (morning entry) → excluded from outliers.");
 
-    // Experimental Logic
-    if (clearanceStatus === "Cleared") why.push("Load Cleared Badge: System has fully integrated recent load points.");
-    if (clearanceStatus === "Clearing") why.push("Load Clearing: System is actively absorbing recent work.");
-    if (approachingCapacity && clearanceStatus !== "Cleared") why.push("Approaching Capacity: Personal stacking threshold reached; bill is coming due.");
-
     const moveScout = "Go Slow, Scout";
     let recText = "";
     const plan: string[] = [];
@@ -514,8 +450,8 @@ export function computeDayAssessment(
         }
     }
 
-    if (mode === "adt" && (loadStackFlag || approachingCapacity) && rec !== "Red") {
-        why.push(`Load sequencing: stacking risk detected → Scout day.`);
+    if (mode === "adt" && loadStackFlag && rec !== "Red") {
+        why.push(`Load sequencing: two consecutive high-step days detected → Scout day.`);
         plan.length = 0;
         recText = (rec === "Green") ? `REGULATED — Scout Day` : `Modulate & Observe — Scout Day`;
         plan.push("Scout day: move to maintain trust, but de-stack load.");
@@ -660,9 +596,7 @@ export function computeDayAssessment(
         insight, fragilityType, signalTension, mantra, scoutCheck,
         crashStatus, loadMemory, loadHistory, loadStatus, loadTrend, clearanceRate, intensityReady,
         loadThreshold: bSteps * 1.2,
-        ouraHrvStatus: getOuraHrvStatus(), cycleLabel,
-        clearanceStatus,
-        approachingCapacity
+        ouraHrvStatus: getOuraHrvStatus(), cycleLabel
     };
 }
 

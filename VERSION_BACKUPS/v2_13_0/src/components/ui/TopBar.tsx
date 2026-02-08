@@ -11,10 +11,7 @@ export function TopBar() {
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-4 border-b border-border gap-4">
             <div className="flex items-center gap-3">
                 <div>
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Recovery Dashboard</h1>
-                        <span className="px-1.5 py-0.5 rounded bg-secondary text-[10px] font-mono font-bold text-muted-foreground border border-border">v2.13.0</span>
-                    </div>
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Recovery Dashboard</h1>
                     <p className="text-xs md:text-sm text-muted-foreground mt-1">Daily recovery analysis and training guidance</p>
                 </div>
                 {isSyncing && (
