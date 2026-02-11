@@ -223,6 +223,12 @@ export default function DashboardPage() {
                                     {assessment.cycleLabel ? assessment.cycleLabel.toUpperCase() :
                                         (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
                                 </div>
+
+                                {assessment.approachingCapacity && (
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-amber-500/20 border border-amber-600">
+                                        Approaching Capacity
+                                    </div>
+                                )}
                             </div>
 
                             {assessment.cycleLabel === "Post-regulation dip" ? (
