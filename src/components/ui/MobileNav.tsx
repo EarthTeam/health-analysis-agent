@@ -7,7 +7,7 @@ import { LayoutDashboard, PlusCircle, History, Settings } from "lucide-react";
 
 const navItems = [
     { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Entry", href: "/entry", icon: PlusCircle },
+    { name: "Bulk", href: "/bulk-entry", icon: PlusCircle },
     { name: "History", href: "/history", icon: History },
     { name: "Settings", href: "/settings", icon: Settings },
 ];

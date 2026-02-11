@@ -68,38 +68,39 @@ export default function BulkEntryPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold">Bulk Data Entry</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Efficiently enter data for multiple days across all trackers.</p>
+                    <h1 className="text-xl md:text-2xl font-bold">Bulk Data Entry</h1>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">Efficiently enter data for multiple days.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4">
+                    <div className="flex items-center bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                         <button
                             onClick={() => setDaysToShow(prev => Math.max(1, prev - 1))}
-                            className="p-2 hover:bg-secondary transition-colors border-r border-border"
+                            className="p-2.5 hover:bg-secondary transition-colors border-r border-border"
                         >
-                            <ChevronLeft className="w-4 h-4" />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="px-4 text-sm font-semibold whitespace-nowrap">{daysToShow} Days</span>
+                        <span className="px-4 text-sm font-bold whitespace-nowrap">{daysToShow} Days</span>
                         <button
                             onClick={() => setDaysToShow(prev => prev + 1)}
-                            className="p-2 hover:bg-secondary transition-colors border-l border-border"
+                            className="p-2.5 hover:bg-secondary transition-colors border-l border-border"
                         >
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
                     <button
                         onClick={handleSaveAll}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium shadow-sm hover:bg-primary/90 transition-all"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
                     >
-                        <Save className="w-4 h-4" /> Save All
+                        <Save className="w-5 h-5" /> Save All
                     </button>
                 </div>
             </div>
 
-            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                         <thead>
@@ -120,19 +121,15 @@ export default function BulkEntryPage() {
                             </tr>
                             <tr className="bg-secondary/10 border-b border-border text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                                 <th className="px-4 py-2 sticky left-0 bg-secondary/10 z-20"></th>
-                                {/* Morpheus */}
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-blue-50/10">Ready%</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-blue-50/10 border-r border-border">HRV</th>
-                                {/* Oura */}
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-indigo-50/10">Rec%</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-indigo-50/10">RHR</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-indigo-50/10">HRV</th>
                                 <th className="px-2 py-2 text-center min-w-[90px] bg-indigo-50/10 border-r border-border">Status</th>
-                                {/* Whoop */}
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-red-50/10">Rec%</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-red-50/10">RHR</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-red-50/10 border-r border-border">HRV</th>
-                                {/* Other */}
                                 <th className="px-2 py-2 text-center min-w-[70px] bg-emerald-50/10">Fatigue</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-emerald-50/10">Steps</th>
                                 <th className="px-2 py-2 text-center min-w-[40px] bg-emerald-50/10">Jnt</th>
@@ -148,7 +145,6 @@ export default function BulkEntryPage() {
                                         <td className="px-4 py-2 font-mono text-xs font-bold sticky left-0 bg-white z-10 border-r border-border">
                                             {date}
                                         </td>
-                                        {/* Morpheus */}
                                         <td className="p-1 min-w-[60px]">
                                             <input
                                                 type="number"
@@ -165,7 +161,6 @@ export default function BulkEntryPage() {
                                                 onChange={(ev) => updateField(date, "mHrv", ev.target.value === "" ? null : Number(ev.target.value))}
                                             />
                                         </td>
-                                        {/* Oura */}
                                         <td className="p-1 min-w-[60px]">
                                             <input
                                                 type="number"
@@ -203,7 +198,6 @@ export default function BulkEntryPage() {
                                                 <option value="Pay Attention">Pay Attention</option>
                                             </select>
                                         </td>
-                                        {/* Whoop */}
                                         <td className="p-1 min-w-[60px]">
                                             <input
                                                 type="number"
@@ -228,7 +222,6 @@ export default function BulkEntryPage() {
                                                 onChange={(ev) => updateField(date, "whoopHrv", ev.target.value === "" ? null : Number(ev.target.value))}
                                             />
                                         </td>
-                                        {/* Logs */}
                                         <td className="p-1 min-w-[70px]">
                                             <input
                                                 type="number"
@@ -269,6 +262,198 @@ export default function BulkEntryPage() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {dates.map((date, idx) => {
+                    const e = getEntryForDate(date);
+                    const isToday = date === new Date().toISOString().split("T")[0];
+
+                    const handleCopyPrev = () => {
+                        if (idx < dates.length - 1) {
+                            const prevDate = dates[idx + 1];
+                            const prevEntry = getEntryForDate(prevDate);
+                            // Copy fields except date
+                            Object.entries(prevEntry).forEach(([key, val]) => {
+                                if (key !== 'date') updateField(date, key as keyof DailyEntry, val);
+                            });
+                        }
+                    };
+
+                    return (
+                        <div key={date} className={cn("bg-card rounded-2xl border border-border shadow-sm p-4 space-y-4", isToday && "border-primary ring-1 ring-primary/20")}>
+                            <div className="flex items-center justify-between border-b border-border pb-2">
+                                <span className="font-mono font-bold text-sm">{date} {isToday && "(Today)"}</span>
+                                <button
+                                    onClick={handleCopyPrev}
+                                    className="text-[10px] font-bold text-primary bg-primary/5 px-2 py-1 rounded-lg border border-primary/10"
+                                >
+                                    Copy Prev
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Morpheus */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1">
+                                        <Activity className="w-3 h-3" /> Morpheus
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Ready%</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.mReady ?? ""}
+                                                onChange={(ev) => updateField(date, "mReady", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">HRV</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.mHrv ?? ""}
+                                                onChange={(ev) => updateField(date, "mHrv", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Oura */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                                        <Watch className="w-3 h-3" /> Oura
+                                    </h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Rec%</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.ouraRec ?? ""}
+                                                onChange={(ev) => updateField(date, "ouraRec", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">RHR</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.ouraRhr ?? ""}
+                                                onChange={(ev) => updateField(date, "ouraRhr", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">HRV</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.ouraHrv ?? ""}
+                                                onChange={(ev) => updateField(date, "ouraHrv", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Whoop */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1">
+                                        <Smartphone className="w-3 h-3" /> Whoop
+                                    </h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Rec%</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.whoopRec ?? ""}
+                                                onChange={(ev) => updateField(date, "whoopRec", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">RHR</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.whoopRhr ?? ""}
+                                                onChange={(ev) => updateField(date, "whoopRhr", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">HRV</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.whoopHrv ?? ""}
+                                                onChange={(ev) => updateField(date, "whoopHrv", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Logs */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                                        <ClipboardList className="w-3 h-3" /> Logs
+                                    </h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Fatigue</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.fatigue ?? ""}
+                                                onChange={(ev) => updateField(date, "fatigue", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="1-10"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Steps</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.steps ?? ""}
+                                                onChange={(ev) => updateField(date, "steps", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase">Joint</label>
+                                            <input
+                                                type="number"
+                                                className="w-full h-10 text-center bg-secondary/30 border-none rounded-lg text-sm font-bold"
+                                                value={e.joint ?? ""}
+                                                onChange={(ev) => updateField(date, "joint", ev.target.value === "" ? null : Number(ev.target.value))}
+                                                placeholder="—"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1 pt-2">
+                                <label className="text-[9px] text-muted-foreground uppercase font-bold px-1">Notes</label>
+                                <input
+                                    type="text"
+                                    className="w-full h-11 px-3 bg-secondary/30 border-none focus:ring-2 focus:ring-primary/20 rounded-xl text-sm italic"
+                                    value={e.notes ?? ""}
+                                    onChange={(ev) => updateField(date, "notes", ev.target.value)}
+                                    placeholder="Add day notes (stacking, social, logs)..."
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

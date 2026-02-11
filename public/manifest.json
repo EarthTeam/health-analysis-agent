@@ -1,0 +1,17 @@
+{
+    "name": "Recovery Agent",
+    "short_name": "Recovery",
+    "description": "Daily recovery analysis and training guidance for CFS/ADT",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/3063/3063176.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

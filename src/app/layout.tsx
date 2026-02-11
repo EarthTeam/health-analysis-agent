@@ -10,8 +10,15 @@ import { StoreProvider } from "@/lib/store";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Health Analysis Agent",
+  title: "Recovery Agent",
   description: "Advanced recovery tracking and analysis",
+  manifest: "/manifest.json",
+  themeColor: "#2563eb",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Recovery Agent",
+  },
 };
 
 export default function RootLayout({
