@@ -474,7 +474,7 @@ export default function DashboardPage() {
                                 <div className="flex items-center justify-between p-2 bg-secondary/20 rounded-xl border border-border/50">
                                     <div className="flex items-center gap-2">
                                         <div className={cn("w-2 h-2 rounded-full", (latest.ouraRec || 0) < 50 ? "bg-red-500" : (latest.ouraRec || 0) < 70 ? "bg-amber-500" : "bg-emerald-500")} />
-                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Recharge Status</span>
+                                        <span className="text-xs font-black text-foreground tracking-tight uppercase">Oura Recharge Status</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
@@ -496,7 +496,7 @@ export default function DashboardPage() {
                                                     assessment.ouraHrvStatus === "Fair" ? "bg-amber-500" :
                                                         assessment.ouraHrvStatus === "Pay Attention" ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" : "bg-secondary"
                                         )} />
-                                        <span className="text-xs font-bold text-foreground tracking-tight uppercase">Oura HRV Trend</span>
+                                        <span className="text-xs font-black text-foreground tracking-tight uppercase">Oura HRV Trend</span>
                                     </div>
                                     <span className={cn(
                                         "text-xs font-bold px-2 py-0.5 rounded-lg",

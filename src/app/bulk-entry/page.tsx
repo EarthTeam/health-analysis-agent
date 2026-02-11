@@ -107,16 +107,16 @@ export default function BulkEntryPage() {
                             <tr className="bg-secondary/30 border-b border-border">
                                 <th className="px-4 py-3 text-left font-bold text-muted-foreground sticky left-0 bg-secondary/30 z-20 min-w-[120px]">Date</th>
                                 <th colSpan={2} className="px-4 py-2 text-center font-bold text-primary border-r border-border bg-blue-50/30">
-                                    <div className="flex items-center justify-center gap-1"><Activity className="w-3 h-3" /> Morpheus</div>
+                                    <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><Activity className="w-4 h-4" /> Morpheus</div>
                                 </th>
                                 <th colSpan={4} className="px-4 py-2 text-center font-bold text-indigo-600 border-r border-border bg-indigo-50/20">
-                                    <div className="flex items-center justify-center gap-1"><Watch className="w-3 h-3" /> Oura</div>
+                                    <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><Watch className="w-4 h-4" /> Oura</div>
                                 </th>
                                 <th colSpan={3} className="px-4 py-2 text-center font-bold text-red-600 border-r border-border bg-red-50/20">
-                                    <div className="flex items-center justify-center gap-1"><Smartphone className="w-3 h-3" /> Whoop</div>
+                                    <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><Smartphone className="w-4 h-4" /> Whoop</div>
                                 </th>
                                 <th colSpan={4} className="px-4 py-2 text-center font-bold text-emerald-600 bg-emerald-50/20">
-                                    <div className="flex items-center justify-center gap-1"><ClipboardList className="w-3 h-3" /> Logs</div>
+                                    <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><ClipboardList className="w-4 h-4" /> Logs</div>
                                 </th>
                             </tr>
                             <tr className="bg-secondary/10 border-b border-border text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
@@ -296,8 +296,8 @@ export default function BulkEntryPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Morpheus */}
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1">
-                                        <Activity className="w-3 h-3" /> Morpheus
+                                    <h4 className="text-[12px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1.5 pb-1 border-b border-blue-100">
+                                        <Activity className="w-3.5 h-3.5" /> Morpheus
                                     </h4>
                                     <div className="grid grid-cols-2 gap-2">
                                         <div className="space-y-1">
@@ -325,8 +325,8 @@ export default function BulkEntryPage() {
 
                                 {/* Oura */}
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
-                                        <Watch className="w-3 h-3" /> Oura
+                                    <h4 className="text-[12px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5 pb-1 border-b border-indigo-100">
+                                        <Watch className="w-3.5 h-3.5" /> Oura
                                     </h4>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="space-y-1">
@@ -364,8 +364,8 @@ export default function BulkEntryPage() {
 
                                 {/* Whoop */}
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1">
-                                        <Smartphone className="w-3 h-3" /> Whoop
+                                    <h4 className="text-[12px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5 pb-1 border-b border-red-100">
+                                        <Smartphone className="w-3.5 h-3.5" /> Whoop
                                     </h4>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="space-y-1">
@@ -403,8 +403,8 @@ export default function BulkEntryPage() {
 
                                 {/* Logs */}
                                 <div className="space-y-2">
-                                    <h4 className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
-                                        <ClipboardList className="w-3 h-3" /> Logs
+                                    <h4 className="text-[12px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 pb-1 border-b border-emerald-100">
+                                        <ClipboardList className="w-3.5 h-3.5" /> Logs
                                     </h4>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="space-y-1">
