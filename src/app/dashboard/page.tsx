@@ -224,9 +224,13 @@ export default function DashboardPage() {
                                         (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
                                 </div>
 
-                                {assessment.approachingCapacity && (
+                                {assessment.approachingCapacity ? (
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-amber-500/20 border border-amber-600">
                                         Approaching Capacity
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-tighter border border-emerald-100">
+                                        Capacity: Normal
                                     </div>
                                 )}
                             </div>
