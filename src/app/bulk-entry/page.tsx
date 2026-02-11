@@ -360,6 +360,20 @@ export default function BulkEntryPage() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="space-y-1 mt-1">
+                                        <label className="text-[9px] text-muted-foreground uppercase px-1">HRV Balance (Status)</label>
+                                        <select
+                                            className="w-full h-10 text-sm bg-secondary/30 border-none rounded-lg font-bold px-2 appearance-none"
+                                            value={e.ouraHrvStatus ?? ""}
+                                            onChange={(ev) => updateField(date, "ouraHrvStatus", ev.target.value === "" ? undefined : ev.target.value)}
+                                        >
+                                            <option value="">— Balance —</option>
+                                            <option value="Optimal">Optimal</option>
+                                            <option value="Good">Good</option>
+                                            <option value="Fair">Fair</option>
+                                            <option value="Pay Attention">Pay Attention</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 {/* Whoop */}
