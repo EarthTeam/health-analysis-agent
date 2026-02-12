@@ -71,6 +71,7 @@ export interface DayAssessment {
     cycleLabel?: string;
     clearanceStatus: "Clearing" | "Cleared" | "None";
     approachingCapacity: boolean;
+    capacityScale: "High" | "Normal" | "Low" | "Critical";
     crashScore: number;
 }
 

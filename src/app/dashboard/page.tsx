@@ -224,15 +224,15 @@ export default function DashboardPage() {
                                         (assessment.crashStatus === "Stable" ? "Stable/No Signal" : assessment.crashStatus.replace("-", " "))}
                                 </div>
 
-                                {assessment.approachingCapacity ? (
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-amber-500/20 border border-amber-600">
-                                        Approaching Capacity
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-tighter border border-emerald-100">
-                                        Capacity: Normal
-                                    </div>
-                                )}
+                                <div className={cn(
+                                    "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm",
+                                    assessment.capacityScale === "High" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                        assessment.capacityScale === "Normal" ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                            assessment.capacityScale === "Low" ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                "bg-red-500 text-white border-red-600 animate-pulse"
+                                )}>
+                                    Stacking Margin: {assessment.capacityScale}
+                                </div>
                             </div>
 
                             {assessment.cycleLabel === "Post-regulation dip" ? (
@@ -259,13 +259,21 @@ export default function DashboardPage() {
                                     </p>
                                 </div>
                             ) : (
-                                <p className="text-sm font-medium text-foreground leading-snug">
-                                    {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
-                                    {assessment.crashStatus === "Load-Integrating" && "Load still integrating. System capacity is returning but not yet fully cleared."}
-                                    {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
-                                    {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
-                                    {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
-                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-foreground leading-snug">
+                                        {assessment.crashStatus === "Stable" && "System responding normally within expected ADT/CFS range."}
+                                        {assessment.crashStatus === "Load-Integrating" && "Load still integrating. System capacity is returning but not yet fully cleared."}
+                                        {assessment.crashStatus === "Pre-Crash" && "Warning signs accumulating. Load tolerance is narrowing."}
+                                        {assessment.crashStatus === "Crash-Onset" && "Multi-signal convergence. Strong recommendation to protect."}
+                                        {assessment.crashStatus === "Crash-State" && "Dysregulation established. Recovery priority only."}
+                                    </p>
+                                    <p className="text-[10px] italic text-muted-foreground leading-tight">
+                                        {assessment.capacityScale === "High" && "Ample margin for load. Stacking risk is low."}
+                                        {assessment.capacityScale === "Normal" && "Typical tolerance. Maintain routine but avoid excessive stacking."}
+                                        {assessment.capacityScale === "Low" && "Narrow margin. Recent stacking has utilized most available capacity."}
+                                        {assessment.capacityScale === "Critical" && "Limit reached. Further stacking will likely trigger a dysregulation event."}
+                                    </p>
+                                </div>
                             )}
 
                             <div className="pt-4 space-y-3 border-t border-border/50">
@@ -289,7 +297,10 @@ export default function DashboardPage() {
 
                                 <div>
                                     <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Clearance Proximity</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Clearance Proximity</span>
+                                            <span className="text-[9px] text-muted-foreground italic tracking-tight">Units left to reach "CLEARED" state (0.15 limit)</span>
+                                        </div>
                                         <span className="text-[10px] font-mono font-bold text-foreground">
                                             {assessment.loadMemory <= 0.15 ? "CLEARED" : `${Math.max(0, assessment.loadMemory - 0.15).toFixed(2)} units to go`}
                                         </span>

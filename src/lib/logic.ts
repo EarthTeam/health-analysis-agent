@@ -28,7 +28,7 @@ function calculateLoadReservoir(
 ) {
     const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
     const targetIdx = sorted.findIndex(e => e.date === targetDate);
-    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const, clearanceRate: 0, clearStreak: 0, approachingCapacity: false, clearanceStatus: "None" as const };
+    if (targetIdx === -1) return { currentLoad: 0, history: [], status: "Clear" as const, trend: "Plateau" as const, clearanceRate: 0, clearStreak: 0, approachingCapacity: false, capacityScale: "High" as const, clearanceStatus: "None" as const };
 
     const mixedKeywords = ["social", "desk", "cognitive", "firewood", "carpentry", "mowing", "work", "meeting", "people", "zoom", "painting", "fixing", "repair", "tinkering"];
 
@@ -152,6 +152,11 @@ function calculateLoadReservoir(
         else break;
     }
 
+    let capacityScale: "High" | "Normal" | "Low" | "Critical" = "High";
+    if (isApproaching || currentLoad >= 2.2) capacityScale = "Critical";
+    else if (currentLoad >= 1.6) capacityScale = "Low";
+    else if (currentLoad >= 0.8) capacityScale = "Normal";
+
     return {
         currentLoad,
         history: history.slice(-historyWindow).map(h => ({ date: h.date, value: h.value })),
@@ -160,6 +165,7 @@ function calculateLoadReservoir(
         clearanceRate: lastClearanceRate * 100,
         clearStreak,
         approachingCapacity: isApproaching,
+        capacityScale,
         clearanceStatus
     };
 }
@@ -405,7 +411,7 @@ export function computeDayAssessment(
     // --- PEM-Aware Load Reservoir ---
     const bSteps = base.steps?.mean || 9500;
     const reservoirResults = calculateLoadReservoir(entries, entry.date, bSteps, mode, baselineDays);
-    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate, approachingCapacity, clearanceStatus } = reservoirResults;
+    const { currentLoad: loadMemory, history: loadHistory, status: loadStatus, trend: loadTrend, clearanceRate, approachingCapacity, capacityScale, clearanceStatus } = reservoirResults;
 
     // --- Post‑regulation dip detection (ADT/CFS-friendly) ---
     let cycleLabel = "";
@@ -663,6 +669,7 @@ export function computeDayAssessment(
         ouraHrvStatus: getOuraHrvStatus(), cycleLabel,
         clearanceStatus,
         approachingCapacity,
+        capacityScale,
         crashScore: finalScore
     };
 }
