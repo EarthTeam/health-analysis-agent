@@ -22,6 +22,8 @@ export interface DailyEntry {
     fatigue: number | null; // 1-10
     resistance: "Y" | "N";
     joint: number | null; // 0-10
+    workStress?: "Low" | "Medium" | "High";
+    emotionalStress?: "Low" | "Medium" | "High";
     notes: string;
 }
 

@@ -115,7 +115,7 @@ export default function BulkEntryPage() {
                                 <th colSpan={3} className="px-4 py-2 text-center font-bold text-red-600 border-r border-border bg-red-50/20">
                                     <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><Smartphone className="w-4 h-4" /> Whoop</div>
                                 </th>
-                                <th colSpan={4} className="px-4 py-2 text-center font-bold text-emerald-600 bg-emerald-50/20">
+                                <th colSpan={6} className="px-4 py-2 text-center font-bold text-emerald-600 bg-emerald-50/20">
                                     <div className="flex items-center justify-center gap-1.5 text-xs md:text-sm"><ClipboardList className="w-4 h-4" /> Logs</div>
                                 </th>
                             </tr>
@@ -133,6 +133,8 @@ export default function BulkEntryPage() {
                                 <th className="px-2 py-2 text-center min-w-[70px] bg-emerald-50/10">Fatigue</th>
                                 <th className="px-2 py-2 text-center min-w-[60px] bg-emerald-50/10">Steps</th>
                                 <th className="px-2 py-2 text-center min-w-[40px] bg-emerald-50/10">Jnt</th>
+                                <th className="px-2 py-2 text-center min-w-[70px] bg-emerald-50/10">Work Str</th>
+                                <th className="px-2 py-2 text-center min-w-[70px] bg-emerald-50/10">Emo Str</th>
                                 <th className="px-4 py-2 text-left bg-emerald-50/10">Notes</th>
                             </tr>
                         </thead>
@@ -246,6 +248,28 @@ export default function BulkEntryPage() {
                                                 value={e.joint ?? ""}
                                                 onChange={(ev) => updateField(date, "joint", ev.target.value === "" ? null : Number(ev.target.value))}
                                             />
+                                        </td>
+                                        <td className="p-1 min-w-[70px]">
+                                            <select
+                                                className="w-full h-8 text-[10px] bg-transparent border-none focus:ring-1 focus:ring-primary rounded p-0 text-center"
+                                                value={e.workStress ?? "Low"}
+                                                onChange={(ev) => updateField(date, "workStress", ev.target.value as any)}
+                                            >
+                                                <option value="Low">Low</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="High">High</option>
+                                            </select>
+                                        </td>
+                                        <td className="p-1 min-w-[70px]">
+                                            <select
+                                                className="w-full h-8 text-[10px] bg-transparent border-none focus:ring-1 focus:ring-primary rounded p-0 text-center"
+                                                value={e.emotionalStress ?? "Low"}
+                                                onChange={(ev) => updateField(date, "emotionalStress", ev.target.value as any)}
+                                            >
+                                                <option value="Low">Low</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="High">High</option>
+                                            </select>
                                         </td>
                                         <td className="p-1">
                                             <input
@@ -450,6 +474,32 @@ export default function BulkEntryPage() {
                                                 onChange={(ev) => updateField(date, "joint", ev.target.value === "" ? null : Number(ev.target.value))}
                                                 placeholder="—"
                                             />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase font-bold px-1">Work Stress</label>
+                                            <select
+                                                className="w-full h-10 text-xs bg-secondary/30 border-none rounded-lg font-bold px-2 appearance-none"
+                                                value={e.workStress ?? "Low"}
+                                                onChange={(ev) => updateField(date, "workStress", ev.target.value as any)}
+                                            >
+                                                <option value="Low">Low</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="High">High</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] text-muted-foreground uppercase font-bold px-1">Emo Stress</label>
+                                            <select
+                                                className="w-full h-10 text-xs bg-secondary/30 border-none rounded-lg font-bold px-2 appearance-none"
+                                                value={e.emotionalStress ?? "Low"}
+                                                onChange={(ev) => updateField(date, "emotionalStress", ev.target.value as any)}
+                                            >
+                                                <option value="Low">Low</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="High">High</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

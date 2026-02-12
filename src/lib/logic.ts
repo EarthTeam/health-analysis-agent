@@ -55,6 +55,14 @@ function calculateLoadReservoir(
         if (hasMixedLoad) contribution += 0.3;
         if (e.notes?.toLowerCase().includes("hill")) contribution += 0.5;
 
+        // Non-Activity Stress Integration (CFS Aware)
+        // Medium stress ~ equivalent to a resistance session or +2,500 steps
+        // High stress ~ equivalent to a high-volume activity day or +6,000 steps
+        if (e.workStress === "Medium") contribution += 0.4;
+        if (e.workStress === "High") contribution += 0.9;
+        if (e.emotionalStress === "Medium") contribution += 0.4;
+        if (e.emotionalStress === "High") contribution += 0.9;
+
         reservoir += contribution;
 
         const rechargePwr = e.ouraRec ?? e.whoopRec ?? 70;
@@ -88,6 +96,9 @@ function calculateLoadReservoir(
 
         // C. Reservoir limit
         if (reservoir > 2.2) appCap = true;
+
+        // D. Stress-based
+        if (e.workStress === "High" || e.emotionalStress === "High") appCap = true;
 
         // --- Improvement Detection (for Cleared Badge) ---
         // "Morning heaviness milder" (fatigue drop) OR "Regulation comes online" (diurnal notes)
@@ -462,6 +473,8 @@ export function computeDayAssessment(
     }
 
     if (cycleLabel) why.push("Pattern suggests a post‑regulation dip: protect the morning and reassess later.");
+    if (entry.workStress === "High" || entry.workStress === "Medium") why.push(`${entry.workStress} Work Stress detected: significant nervous system tax.`);
+    if (entry.emotionalStress === "High" || entry.emotionalStress === "Medium") why.push(`${entry.emotionalStress} Emotional Stress detected: cognitive/emotional load adding to reservoir.`);
     if (stepsMissing) why.push("Steps not yet entered (morning entry) → excluded from outliers.");
 
     // Experimental Logic
