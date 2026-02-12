@@ -225,11 +225,11 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className={cn(
-                                    "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm",
-                                    assessment.capacityScale === "High" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                        assessment.capacityScale === "Normal" ? "bg-blue-50 text-blue-600 border-blue-100" :
-                                            assessment.capacityScale === "Low" ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                "bg-red-500 text-white border-red-600 animate-pulse"
+                                    "flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm",
+                                    assessment.capacityScale === "High" ? "bg-emerald-500 text-white border-emerald-600" :
+                                        assessment.capacityScale === "Normal" ? "bg-blue-500 text-white border-blue-600" :
+                                            assessment.capacityScale === "Low" ? "bg-orange-500 text-white border-orange-600" :
+                                                "bg-red-600 text-white border-red-700 animate-pulse shadow-md shadow-red-500/20"
                                 )}>
                                     Stacking Margin: {assessment.capacityScale}
                                 </div>

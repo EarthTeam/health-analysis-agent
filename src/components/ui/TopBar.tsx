@@ -13,7 +13,7 @@ export function TopBar() {
                 <div>
                     <div className="flex items-center gap-2">
                         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Recovery Dashboard</h1>
-                        <span className="px-1.5 py-0.5 rounded bg-secondary text-[10px] font-mono font-bold text-muted-foreground border border-border">v2.14.5</span>
+                        <span className="px-1.5 py-0.5 rounded bg-secondary text-[10px] font-mono font-bold text-muted-foreground border border-border">v2.14.6</span>
                     </div>
                     <p className="text-xs md:text-sm text-muted-foreground mt-1">Daily recovery analysis and training guidance</p>
                 </div>
